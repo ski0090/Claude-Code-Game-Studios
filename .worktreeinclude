@@ -6,3 +6,6 @@
 project.local.yaml
 CLAUDE.local.md
 .claude/settings.local.json
+# A Besfa game's shared Cargo target (`besfa new` writes it, with this
+# machine's path). Without it a worktree builds Bevy from scratch.
+.cargo/config.toml

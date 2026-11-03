@@ -9,6 +9,13 @@
 # information and must win: a caller sitting inside another project means that
 # project, not this one. Resolving to the script's own location first would
 # override them. So, in order:
+#   0. the payload's "cwd"      -> it, or its git top level, when that holds
+#      project.yaml or .claude/hooks/session-start.sh. Every hook gets one JSON
+#      object on stdin, and its cwd is where the session works. A desktop
+#      worktree session runs hooks from the main checkout (the working
+#      directory and CLAUDE_PROJECT_DIR both name it), so rules 1-3 alone read
+#      and write the main checkout's state. stdin is read here once, bounded,
+#      and handed back unchanged: the hook's own read below sees the payload.
 #   1. cwd holds project.yaml   -> cwd   (a project root)
 #   2. cwd holds .claude/       -> cwd   (a project root not yet configured),
 #      unless cwd is itself named .claude: a stray .claude/.claude/ would
@@ -20,7 +27,20 @@
 # overriding a caller that legitimately means somewhere else.
 #
 # NOT an upward search: that resolves a nested project to its parent's config.
-if [ -f "project.yaml" ] || { [ -d ".claude" ] && [ "${PWD##*/}" != ".claude" ]; }; then
+CCGS_IN=""
+if [ ! -t 0 ]; then
+  if command -v timeout >/dev/null 2>&1; then CCGS_IN=$(timeout 2 cat 2>/dev/null); else CCGS_IN=$(cat 2>/dev/null); fi
+  exec <<<"$CCGS_IN"
+fi
+CCGS_CWD=""; _ccgs_re='"cwd"[[:space:]]*:[[:space:]]*"([^"]*)"'; _ccgs_bs='\'
+[[ $CCGS_IN =~ $_ccgs_re ]] && CCGS_CWD=${BASH_REMATCH[1]//"$_ccgs_bs$_ccgs_bs"/$_ccgs_bs}
+_ccgs_is_root() { [ -f "$1/project.yaml" ] || [ -f "$1/.claude/hooks/session-start.sh" ]; }
+if [ -n "$CCGS_CWD" ] && ! _ccgs_is_root "$CCGS_CWD"; then
+  CCGS_CWD=$(git -C "$CCGS_CWD" rev-parse --show-toplevel 2>/dev/null)
+fi
+if [ -n "$CCGS_CWD" ] && _ccgs_is_root "$CCGS_CWD"; then
+  CCGS_ROOT="$CCGS_CWD"
+elif [ -f "project.yaml" ] || { [ -d ".claude" ] && [ "${PWD##*/}" != ".claude" ]; }; then
   CCGS_ROOT="$PWD"
 elif [ -n "${CLAUDE_PROJECT_DIR:-}" ] && [ -d "${CLAUDE_PROJECT_DIR}" ] && case "${CLAUDE_PROJECT_DIR%/}" in */.claude|*\\.claude) false ;; *) true ;; esac; then
   CCGS_ROOT="$CLAUDE_PROJECT_DIR"

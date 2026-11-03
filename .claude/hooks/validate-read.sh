@@ -1,9 +1,23 @@
 #!/bin/bash
 
 # --- work from the project root ----------------------------------------------
-# Same precedence as validate-write.sh (see there for why): a cwd that is a
-# project root wins, then CLAUDE_PROJECT_DIR, then this script's location.
-if [ -f "project.yaml" ] || { [ -d ".claude" ] && [ "${PWD##*/}" != ".claude" ]; }; then
+# Same precedence as validate-write.sh (see there for why): the payload's cwd,
+# then a cwd that is a project root, then CLAUDE_PROJECT_DIR, then this
+# script's location.
+CCGS_IN=""
+if [ ! -t 0 ]; then
+  if command -v timeout >/dev/null 2>&1; then CCGS_IN=$(timeout 2 cat 2>/dev/null); else CCGS_IN=$(cat 2>/dev/null); fi
+  exec <<<"$CCGS_IN"
+fi
+CCGS_CWD=""; _ccgs_re='"cwd"[[:space:]]*:[[:space:]]*"([^"]*)"'; _ccgs_bs='\'
+[[ $CCGS_IN =~ $_ccgs_re ]] && CCGS_CWD=${BASH_REMATCH[1]//"$_ccgs_bs$_ccgs_bs"/$_ccgs_bs}
+_ccgs_is_root() { [ -f "$1/project.yaml" ] || [ -f "$1/.claude/hooks/session-start.sh" ]; }
+if [ -n "$CCGS_CWD" ] && ! _ccgs_is_root "$CCGS_CWD"; then
+  CCGS_CWD=$(git -C "$CCGS_CWD" rev-parse --show-toplevel 2>/dev/null)
+fi
+if [ -n "$CCGS_CWD" ] && _ccgs_is_root "$CCGS_CWD"; then
+  CCGS_ROOT="$CCGS_CWD"
+elif [ -f "project.yaml" ] || { [ -d ".claude" ] && [ "${PWD##*/}" != ".claude" ]; }; then
   CCGS_ROOT="$PWD"
 elif [ -n "${CLAUDE_PROJECT_DIR:-}" ] && [ -d "${CLAUDE_PROJECT_DIR}" ] && case "${CLAUDE_PROJECT_DIR%/}" in */.claude|*\\.claude) false ;; *) true ;; esac; then
   CCGS_ROOT="$CLAUDE_PROJECT_DIR"

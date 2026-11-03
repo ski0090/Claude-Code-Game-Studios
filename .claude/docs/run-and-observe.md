@@ -266,6 +266,8 @@ ski0090/besfa#19).
   It builds with the editor's features, runs the game with no window, plays it
   for `--wait` seconds (default 0), and saves what the player sees, the game's
   own cameras with their UI, at 1280x720, once models and shaders have loaded.
+  No window is not step 1's forbidden headless run: the renderer still draws
+  every game camera, into an offscreen image instead of a window.
   Then it stops the game; it never writes the scene file. The path must be a
   `.png` inside the project; folders are created. Exit 0 with
   `Screenshot saved to <path>` only when the file was written; 30 with one

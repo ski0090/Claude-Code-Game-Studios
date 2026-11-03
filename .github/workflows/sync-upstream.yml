@@ -1,0 +1,37 @@
+name: Sync upstream
+
+# Opens pull requests that bring Donchitos/Claude-Code-Game-Studios into main,
+# and main into besfa. A person merges them, with a merge commit.
+# Needs Settings > Actions > General > "Allow GitHub Actions to create and
+# approve pull requests".
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # A fork that is not ski0090's has no business running this.
+    if: github.repository == 'ski0090/Claude-Code-Game-Studios'
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Run the script's own test
+        run: bash .github/scripts/test-sync-upstream.sh
+      - name: Sync
+        run: bash .github/scripts/sync-upstream.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}

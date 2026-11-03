@@ -13,6 +13,8 @@
 # gh calls instead of making them.
 set -euo pipefail
 
+T=$(mktemp -d)
+trap 'rm -rf "$T"' EXIT
 UPSTREAM_URL=${UPSTREAM_URL:-https://github.com/Donchitos/Claude-Code-Game-Studios.git}
 BESFA=besfa
 
@@ -37,17 +39,36 @@ else
   branch="sync/upstream-$sha"
   git switch --quiet -c "$branch" origin/main
   if git merge --no-edit --quiet -m "Merge upstream main ($sha) into main" upstream/main; then
-    git push --quiet origin "$branch"
-    gh pr create --base main --head "$branch" \
-      --title "Merge upstream main ($sha) into main" \
-      --body "$(printf '%s\n' \
-        "Upstream's main moved. This merges it into the fork's main with no conflicts." \
-        "" \
-        "**Merge it with a merge commit, not a squash**, so main keeps upstream's history and the next sync sees it." \
-        "" \
-        "Skim what upstream changed in \`.claude/\` before merging: hooks and skills run in every game that follows the \`besfa\` branch." \
-        "" \
-        "Opened by .github/workflows/sync-upstream.yml.")"
+    # The workflow's token cannot push a commit that changes .github/workflows,
+    # which upstream may one day add; say so instead of failing quietly.
+    if git push --quiet origin "$branch" 2>"$T/push.err"; then
+      gh pr create --base main --head "$branch" \
+        --title "Merge upstream main ($sha) into main" \
+        --body "$(printf '%s\n' \
+          "Upstream's main moved. This merges it into the fork's main with no conflicts." \
+          "" \
+          "**Merge it with a merge commit, not a squash**, so main keeps upstream's history and the next sync sees it." \
+          "" \
+          "Skim what upstream changed in \`.claude/\` before merging: hooks and skills run in every game that follows the \`besfa\` branch." \
+          "" \
+          "Opened by .github/workflows/sync-upstream.yml.")"
+    else
+      git switch --quiet --detach origin/main
+      if [ "$(gh_read issue list --state open --search "\"Upstream sync push rejected\" in:title" --json number --jq length)" = 0 ]; then
+        gh issue create \
+          --title "Upstream sync push rejected at $sha" \
+          --body "$(printf '%s\n' \
+            "Merging upstream main ($sha) into main worked, but pushing the branch was rejected:" \
+            "" \
+            '```' "$(cat "$T/push.err")" '```' \
+            "" \
+            "Upstream probably changed \`.github/workflows/\`, which the workflow's token may not push. Merge \`upstream/main\` into \`main\` by hand and open the PR." \
+            "" \
+            "Opened by .github/workflows/sync-upstream.yml.")"
+      else
+        echo "A push-rejected issue is already open."
+      fi
+    fi
   else
     files=$(git diff --name-only --diff-filter=U)
     git merge --abort

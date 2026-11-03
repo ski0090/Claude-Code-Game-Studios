@@ -77,4 +77,14 @@ expect "conflict: no sync PR" "--base main --head sync/upstream-" 0
 run besfa-behind
 expect "besfa behind: PR main -> besfa" "--base besfa --head main" 1
 
+# 6. the fork refuses the sync branch, as it does a commit that changes
+#    .github/workflows: an issue, no PR, and the script still exits 0.
+( cd "$T/seed"; echo three >>a.txt; g commit -qam three; g push -q -f origin main )
+printf '#!/bin/sh\nwhile read old new ref; do case "$ref" in refs/heads/sync/*) echo "refusing $ref" >&2; exit 1;; esac; done\n' >"$T/fork.git/hooks/pre-receive"
+chmod +x "$T/fork.git/hooks/pre-receive"
+run push-rejected
+expect "push rejected: issue" "issue create" 1
+expect "push rejected: no sync PR" "--base main --head sync/upstream-" 0
+rm "$T/fork.git/hooks/pre-receive"
+
 echo "all passed"

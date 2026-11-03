@@ -16,7 +16,12 @@
 #   --fill  fill an empty .ccg first; without it the hook is skipped until
 #           .ccg is filled (SessionStart hooks run in parallel: one fills)
 # Exit: the hook's own, or 0 when it was skipped. Needs git; no Python.
-p=$(cat)
+# Bounded, as the hooks' own prologues read it: a harness may leave stdin open,
+# and an unbounded read would cost this hook its whole timeout.
+p=""
+if [ ! -t 0 ]; then
+  if command -v timeout >/dev/null 2>&1; then p=$(timeout 2 cat 2>/dev/null); else p=$(cat 2>/dev/null); fi
+fi
 re='"cwd"[[:space:]]*:[[:space:]]*"([^"]*)"'; bs='\'
 cwd=""; [[ $p =~ $re ]] && cwd=${BASH_REMATCH[1]//"$bs$bs"/$bs}
 top=""; [ -n "$cwd" ] && top=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)

@@ -5,7 +5,9 @@
 `/test-helpers [system-name | all | scaffold]` generates test helper files in
 the engine's **helper root** — the only place its test runner compiles them:
 `tests/helpers/` on Godot, `Assets/Tests/EditMode/Helpers/` on Unity (inside the
-`EditModeTests` assembly), `Source/<Module>/Private/Tests/Helpers/` on Unreal. It
+`EditModeTests` assembly), `Source/<Module>/Private/Tests/Helpers/` on Unreal,
+`tests/helpers/mod.rs` on Bevy (declared from each test root's `main.rs` with
+`#[path = "../helpers/mod.rs"] mod helpers;`). It
 writes base assertion and factory helpers (`scaffold`), and a
 `[helper root]/[system]_factory.[ext]` per system built from that system's GDD
 (`[system-name]` or `all`). No argument runs `scaffold` when no helpers exist,
@@ -230,4 +232,9 @@ Fixture defaults.
   Case 6's pattern for its own helper root; not separately tested. Nor is a
   Unity project whose PlayMode tests need the helpers too (the skill asks before
   creating a shared `TestHelpers.asmdef`).
+- Bevy helper generation (`tests/helpers/mod.rs`, declared from each test
+  root's `main.rs` after an ask) follows Case 6's pattern for its own helper
+  root; not separately tested. The skill's Bevy base helper and the `#[path]`
+  declaration were compiled on Bevy 0.20.1 from both test roots, and
+  `test_app` and `assert_in_range` run.
 - A requested system with no GDD is not tested; the skill does not define that path.

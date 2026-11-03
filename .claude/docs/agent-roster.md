@@ -64,6 +64,7 @@ session's model.
 | `unreal-specialist` | Unreal Engine 5 | Blueprint vs C++, GAS overview, UE subsystems, Unreal optimization |
 | `unity-specialist` | Unity | MonoBehaviour vs DOTS, Addressables, URP/HDRP, Unity optimization |
 | `godot-specialist` | Godot 4 | GDScript patterns, node/scene architecture, signals, Godot optimization |
+| `bevy-specialist` | Bevy (Rust) | ECS architecture, plugins and schedules, messages and observers, WGSL/WESL shaders, bevy_ui, assets and scenes, headless tests. Bevy has no sub-specialists: shader and UI work routes here too |
 
 ### Unreal Engine Sub-Specialists
 

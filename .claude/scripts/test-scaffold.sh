@@ -13,8 +13,8 @@
 #
 # Usage: bash .claude/scripts/test-scaffold.sh ENGINE [--dry-run | --list] [--root DIR]
 #          [--module NAME] [--project NAME] [--date YYYY-MM-DD]
-#   ENGINE          godot, unity or unreal (the engine.name values, in any case;
-#                   UE5 is not one)
+#   ENGINE          godot, unity, unreal or bevy (the engine.name values, in any
+#                   case; UE5 is not one)
 #   --dry-run       print what would be created (WOULD_CREATE), write nothing
 #   --list          print the project-relative paths this engine's scaffold
 #                   creates, one per line and nothing else, whatever already
@@ -34,12 +34,17 @@
 #   unity    Assets/Tests/EditMode/EditModeTests.asmdef,
 #            Assets/Tests/PlayMode/PlayModeTests.asmdef
 #   unreal   Source/<Module>/Private/Tests/README.md
+#   bevy     tests/unit/main.rs, tests/integration/main.rs
 #   all      .github/workflows/tests.yml, tests/smoke/critical-paths.md
 # The skill asks Godot's two test folders to hold a .gdignore_placeholder file;
 # Godot knows no such name (.gdignore would hide the folder from the editor and
 # from the test runner), so they hold an empty .gitkeep, which keeps the empty
 # folder in git. Unity and Unreal tests live in the engine's test root because
-# neither compiles code under tests/.
+# neither compiles code under tests/. Bevy's two main.rs files are the test
+# roots Cargo builds (tests/<dir>/main.rs is a test target); they hold comments
+# only, no test, so a fresh setup runs zero tests (`running 0 tests`) until a
+# real one is declared in them: a scaffolded test would either name game code
+# that may not exist yet (a compile error) or pass without testing the game.
 # The README carries the setup date and the engine version (engine.version of
 # project.local.yaml, then project.yaml). The CI workflow carries the full
 # Godot version where engine.version has three numbers; a value that is not
@@ -91,11 +96,11 @@ while [ $# -gt 0 ]; do
     *) [ -z "$ENGINE" ] || usage "one engine at a time, got $ENGINE and $1"; ENGINE="$1"; shift ;;
   esac
 done
-[ -n "$ENGINE" ] || usage "no engine: godot, unity or unreal"
+[ -n "$ENGINE" ] || usage "no engine: godot, unity, unreal or bevy"
 ENG=$(printf '%s' "$ENGINE" | tr '[:upper:]' '[:lower:]')
 case "$ENG" in
-  godot|unity|unreal) ;;
-  *) usage "engine must be godot, unity or unreal (the engine.name values), got $ENGINE" ;;
+  godot|unity|unreal|bevy) ;;
+  *) usage "engine must be godot, unity, unreal or bevy (the engine.name values), got $ENGINE" ;;
 esac
 # A module or project name goes into paths and file text: letters, digits and _ only.
 for _n in "$MODULE_ARG" "$PROJECT_ARG"; do
@@ -144,6 +149,7 @@ case "$ENG" in
   godot) ENGNAME=Godot ;;
   unity) ENGNAME=Unity ;;
   unreal) ENGNAME=Unreal ;;
+  bevy) ENGNAME=Bevy ;;
 esac
 if [ -n "$VER" ]; then ENGTXT="$ENGNAME $VER"; else ENGTXT="$ENGNAME [version]"; fi
 # Godot CI needs a full release such as 4.7.2; "4.7" is not one.
@@ -169,6 +175,7 @@ list_paths() {
     godot) echo tests/unit/.gitkeep; echo tests/integration/.gitkeep ;;
     unity) echo Assets/Tests/EditMode/EditModeTests.asmdef; echo Assets/Tests/PlayMode/PlayModeTests.asmdef ;;
     unreal) echo "$UNREAL_README" ;;
+    bevy) echo tests/unit/main.rs; echo tests/integration/main.rs ;;
   esac
   echo "$CI"
   echo "$SMOKE"
@@ -644,6 +651,160 @@ Test name: "@DOCPROJECT@.[System].[Scenario]"
 TPL_UNREAL_TESTS
 }
 
+tpl_readme_bevy() {
+  cat <<'TPL_README_BEVY'
+# Test Infrastructure
+
+**Engine**: @ENGINE@
+**Test Framework**: Rust's built-in test harness, run by `cargo test`
+**CI**: `.github/workflows/tests.yml`
+**Setup date**: @DATE@
+
+## Directory Layout
+
+```
+src/                  # In-file unit tests: #[cfg(test)] mod tests beside the code
+tests/
+  unit/main.rs        # Unit test root: one `mod <system>;` line per system file
+  unit/<system>.rs    # Isolated unit tests (formulas, state machines, logic)
+  integration/main.rs # Integration test root, the same way
+  integration/<system>.rs
+  smoke/              # Critical path test list for /smoke-check gate
+```
+
+```
+production/qa/
+  evidence/       # Screenshot logs and manual test sign-off records
+```
+
+> **Manual evidence lives under `production/qa/evidence/`, not `tests/`** — that
+> is where every consumer reads it.
+
+Cargo builds `tests/*.rs` and `tests/<dir>/main.rs` as test targets, nothing
+else under `tests/`. A `tests/unit/<system>.rs` that `tests/unit/main.rs` does
+not declare with `mod <system>;` is never compiled: no error, and its tests
+never run. Code under `tests/` sees only the library crate's `pub` items, so the
+game lives in `src/lib.rs` and `src/main.rs` only builds the `App`; a test of a
+private item goes in the source file's own `#[cfg(test)] mod tests`.
+
+## Running Tests
+
+```bash
+cargo test
+```
+
+Exit 0: every test passed. Exit 101 on a failing test and also on a compile
+error: a `test result: FAILED` line is a failing test; `error[E…]` or `error:
+could not compile` with no `test result:` line means the code did not compile,
+so no test ran. A run where every `running N tests` line says `running 0 tests`
+ran nothing, which is not a pass. `cargo test` stops at the first test binary
+that fails; `cargo test --no-fail-fast` runs them all.
+
+## Writing a Test
+
+Headless: `MinimalPlugins` in place of `DefaultPlugins`, so no window or GPU.
+Write the input, run one frame with `app.update()`, read `app.world()`:
+
+```rust
+// tests/unit/combat.rs, declared in tests/unit/main.rs as `mod combat;`
+use bevy::prelude::*;
+use <crate>::{Damage, GamePlugin, Health}; // <crate>: the library's name
+
+#[test]
+fn damage_lowers_health() {
+    // Arrange
+    let mut app = App::new();
+    app.add_plugins((MinimalPlugins, GamePlugin));
+    let target = app.world_mut().spawn(Health(10)).id();
+
+    // Act
+    app.world_mut().write_message(Damage(3));
+    app.update();
+
+    // Assert
+    assert_eq!(app.world().get::<Health>(target).unwrap().0, 7);
+}
+```
+
+## Test Naming
+
+Names follow the engine's language (`.claude/rules/test-standards.md`):
+- **Bevy**: file `tests/unit/[system].rs`, declared in `tests/unit/main.rs`;
+  function `[scenario]_[expected]` in snake_case, marked `#[test]`
+  — `combat.rs` → `base_attack_returns_expected_damage()`
+
+## Story Type → Test Evidence
+
+| Story Type | Required Evidence | Location |
+|---|---|---|
+| Logic | Automated unit test — must pass | `tests/unit/[system].rs` |
+| Integration | Integration test OR playtest doc | `tests/integration/[system].rs` |
+| Visual/Feel | Screenshot + lead sign-off | `production/qa/evidence/` |
+| UI | Retained screenshot of each screen touched | `production/qa/evidence/` |
+| Config/Data | Smoke check pass | `production/qa/smoke-*.md` |
+
+## CI
+
+Tests run automatically on every push to `main` and on every pull request.
+A failed test suite blocks merging. The workflow installs Bevy's Linux build
+dependencies first.
+TPL_README_BEVY
+}
+
+# tpl_bevy_main unit|integration -- a test root that compiles and holds no test.
+tpl_bevy_main() {
+  cat <<TPL_BEVY_MAIN
+//! The $1 test root: Cargo builds tests/$1/main.rs as one test target.
+//! Declare each system's test file here, one line per file. A file under
+//! tests/$1/ with no \`mod\` line here is never compiled, and its tests
+//! never run (no error). Tests use the game's pub API from src/lib.rs.
+//!
+//! Example: \`mod combat;\` runs the #[test] functions in tests/$1/combat.rs.
+TPL_BEVY_MAIN
+}
+
+tpl_ci_bevy() {
+  cat <<'TPL_CI_BEVY'
+name: Automated Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run cargo test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      # Bevy's Ubuntu build dependencies, from docs/linux_dependencies.md in
+      # the bevy crate (the second pair is needed while the default wayland
+      # feature is on). Without them the build stops in a -sys crate.
+      - name: Install Bevy's Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ pkg-config libx11-dev libasound2-dev libudev-dev libxkbcommon-x11-0
+          sudo apt-get install -y libwayland-dev libxkbcommon-dev
+
+      # Bevy sets a minimum Rust version (rust-version in its Cargo.toml):
+      # bring the runner's toolchain up to date before building.
+      - name: Update Rust
+        run: rustup update stable && rustup default stable
+
+      # Compiles the crate (and Bevy) first, then runs every test target.
+      # --no-fail-fast: a failing binary does not hide the ones after it.
+      - name: Run tests
+        run: cargo test --no-fail-fast
+TPL_CI_BEVY
+}
+
 
 render() {
   sed -e "s|@ENGINE@|$ENGTXT|g" -e "s|@DATE@|$DATE|g" -e "s|@GODOTVER@|$GODOTVER|g" \
@@ -653,10 +814,12 @@ render() {
 content_of() {
   case "$1" in
     "$README")
-      case "$ENG" in godot) tpl_readme_godot ;; unity) tpl_readme_unity ;; unreal) tpl_readme_unreal ;; esac | render ;;
+      case "$ENG" in godot) tpl_readme_godot ;; unity) tpl_readme_unity ;; unreal) tpl_readme_unreal ;; bevy) tpl_readme_bevy ;; esac | render ;;
     "$CI")
-      case "$ENG" in godot) tpl_ci_godot ;; unity) tpl_ci_unity ;; unreal) tpl_ci_unreal ;; esac | render ;;
+      case "$ENG" in godot) tpl_ci_godot ;; unity) tpl_ci_unity ;; unreal) tpl_ci_unreal ;; bevy) tpl_ci_bevy ;; esac | render ;;
     "$SMOKE") tpl_smoke ;;
+    tests/unit/main.rs) tpl_bevy_main unit ;;
+    tests/integration/main.rs) tpl_bevy_main integration ;;
     Assets/Tests/EditMode/EditModeTests.asmdef) tpl_asmdef_edit ;;
     Assets/Tests/PlayMode/PlayModeTests.asmdef) tpl_asmdef_play ;;
     Source/*/Private/Tests/README.md) tpl_unreal_tests_readme | render ;;
@@ -738,6 +901,13 @@ case "$ENG" in
     fi
     if made "$CI"; then
       need ue_root "$CI" "set UE_ROOT on the self-hosted Windows runner"
+    fi ;;
+  bevy)
+    if [ ! -f Cargo.toml ]; then
+      need cargo_toml Cargo.toml "no Cargo.toml in the root: cargo test has no crate to build (run /setup-engine)"
+    fi
+    if [ ! -f src/lib.rs ]; then
+      need lib_crate src/lib.rs "tests under tests/ see only the library crate's pub API: put the game in src/lib.rs, with src/main.rs only building the App"
     fi ;;
 esac
 

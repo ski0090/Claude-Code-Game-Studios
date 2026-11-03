@@ -298,6 +298,9 @@ Fixture defaults.
 - Unity levels are found under the code root (`Assets/`, `*.unity`) and the
   other content types under `Assets/` (asserted in Protocol Compliance); Unreal
   levels under `Content/` (`*.umap`, with data assets as `*.uasset`); neither
-  engine has its own case.
+  engine has its own case. Bevy levels are `assets/**/*.scn.ron` and
+  `assets/**/*.scn`, data files `.ron`, `.json` and `.yaml` under `assets/`, and
+  content defined in Rust code is `NOT ASSESSED — defined in code`, never 0;
+  no case of its own.
 - Asset naming, size and format compliance is `/asset-audit`'s job, not this
   skill's.

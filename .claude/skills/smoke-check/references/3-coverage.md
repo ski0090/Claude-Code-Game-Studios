@@ -19,7 +19,11 @@ For each story in scope:
 1. Extract the system slug from the story's file path
    (e.g., `production/epics/combat/story-001.md` → `combat`)
 2. Glob `tests/unit/[system]/` and `tests/integration/[system]/` for files
-   whose name contains the story slug or a closely related term
+   whose name contains the story slug or a closely related term (on Bevy, a
+   system is one file: `tests/unit/[system].rs` and
+   `tests/integration/[system].rs`, which count only when that folder's
+   `main.rs` declares them with `mod [system];` — Cargo never compiles an
+   undeclared one)
 3. Check the story file itself for a `Test file:` header field or a
    "Test Evidence" section
 

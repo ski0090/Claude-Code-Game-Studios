@@ -39,6 +39,14 @@ engine-appropriate defaults. Read the existing template first, then fill in:
 - Booleans: `b` prefix (e.g., `bIsAlive`)
 - Files: Match class without prefix (e.g., `PlayerController.h`)
 
+**For Bevy (Rust):**
+- Types — components, resources, messages, plugins, states: PascalCase (e.g., `PlayerController`, `GamePlugin`)
+- Variables, functions, systems and modules: snake_case (e.g., `move_speed`, `apply_damage`)
+- Constants and statics: SCREAMING_SNAKE_CASE (e.g., `MAX_HEALTH`)
+- Messages/events: Bevy has no signals; name the message type in the past tense (e.g., `EnemyDied`)
+- Files: snake_case module files (e.g., `player_movement.rs`)
+- Scenes: snake_case `.scn` or `.scn.ron` files under `assets/scenes/` (e.g., `forest_level.scn.ron`); Bevy's scene loader takes both extensions
+
 ### Input & Platform Section
 
 Populate `## Input & Platform` using the answers gathered in Section 2 (or extracted
@@ -94,7 +102,8 @@ Example filled section:
   - Options: `[A] Set defaults now (60fps, 16.6ms frame budget, engine-appropriate draw call limit)` / `[B] Leave as [TO BE CONFIGURED] — I'll set these when I know my target hardware`
   - If [A]: populate with the suggested defaults. If [B]: leave as placeholder.
 - **Testing**: Suggest the engine-appropriate framework — **gdUnit4** for Godot,
-  NUnit for Unity, Automation Spec for Unreal — and ask before adding.
+  NUnit for Unity, Automation Spec for Unreal, Rust's built-in test harness
+  (`cargo test`, nothing to install) for Bevy — and ask before adding.
   > **Must match `commands.test` in Section 5.5.1, which writes gdUnit4's own
   > runner (`res://addons/gdUnit4/bin/GdUnitCmdTool.gd`), and
   > `.claude/docs/coding-standards.md`, which names the same runner.** Naming GUT
@@ -154,6 +163,28 @@ Also populate the `## Engine Specialists` section in `technical-preferences.md` 
 | Native extension / plugin files (Plugin .uplugin, modules) | unreal-specialist |
 | Blueprint graphs (.uasset BP classes) | ue-blueprint-specialist |
 | General architecture review | unreal-specialist |
+```
+
+**For Bevy:**
+```markdown
+## Engine Specialists
+- **Primary**: bevy-specialist
+- **Language/Code Specialist**: bevy-specialist (Rust — primary covers it)
+- **Shader Specialist**: bevy-specialist (no dedicated shader specialist — primary covers shaders and materials)
+- **UI Specialist**: bevy-specialist (no dedicated UI specialist — primary covers Bevy UI, which is Rust code)
+- **Additional Specialists**: none
+- **Routing Notes**: One agent covers every Bevy domain, as `unreal-specialist` covers Unreal's materials. Invoke it for ECS architecture, systems and plugins, rendering and shaders, UI, and scenes.
+
+### File Extension Routing
+
+| File Extension / Type | Specialist to Spawn |
+|-----------------------|---------------------|
+| Game code (.rs files) | bevy-specialist |
+| Shader / material files (.wgsl / .wesl, material code in .rs) | bevy-specialist |
+| UI / screen files (UI is Rust code under the code root) | bevy-specialist |
+| Scene / prefab / level files (.scn, .scn.ron) | bevy-specialist |
+| Native extension / plugin files (Cargo.toml dependencies) | bevy-specialist |
+| General architecture review | bevy-specialist |
 ```
 
 ### Collaborative Step

@@ -26,6 +26,10 @@ C++ or in Blueprints?" — `[A] C++ (Blueprints for tuning and prototyping)` /
 `[B] Blueprint-primary (C++ only where needed)`. Default to C++ if the user has no
 preference. The answer sets `engine.language` (`"C++"` or `"Blueprint"`).
 
+### Language (Bevy)
+
+No question: Bevy is Rust (`engine.language: "Rust"`).
+
 ---
 
 Read `CLAUDE.md` and show the user the proposed Technology Stack changes.
@@ -55,6 +59,14 @@ Update the Technology Stack section, replacing the `[CHOOSE]` placeholders with 
 The Language line follows the primary-language answer above: the first form for
 `[A]` (`engine.language: "C++"`), the second for `[B]` (`"Blueprint"`).
 
+**For Bevy:**
+```markdown
+- **Engine**: Bevy [major.minor]
+- **Language**: Rust
+- **Build System**: Cargo
+- **Asset Pipeline**: Bevy `AssetServer`, loading from `assets/`
+```
+
 ### Engine reference import
 
 In the same CLAUDE.md write, set the **Engine Version Reference** import to the
@@ -64,9 +76,10 @@ to point at the configured engine:
 - Godot → `@docs/engine-reference/godot/VERSION.md`
 - Unity → `@docs/engine-reference/unity/VERSION.md`
 - Unreal → `@docs/engine-reference/unreal/VERSION.md`
+- Bevy → `@docs/engine-reference/bevy/VERSION.md`
 
-This keeps a Unity or Unreal project from loading the Godot reference in every
-session. It is idempotent — re-running `/setup-engine` for a different
+This keeps a Unity, Unreal or Bevy project from loading the Godot reference in
+every session. It is idempotent — re-running `/setup-engine` for a different
 engine rewrites the same line. (The target `docs/engine-reference/<engine>/`
 directory is created in Section 7, Populate Engine Reference Docs, if it does not yet exist.)
 

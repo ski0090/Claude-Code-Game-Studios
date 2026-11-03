@@ -36,6 +36,14 @@ Use WebSearch and WebFetch to locate the official migration guide between
 Extract: renamed APIs, removed APIs, changed defaults, behavior changes, and
 any "must migrate" items.
 
+**Bevy:** skip the search. bevy.org publishes one guide per minor at
+`https://bevy.org/learn/migration-guides/<old>-to-<new>/`, dots written as dashes
+(`0-19-to-0-20`). An upgrade across several minors needs every guide in between
+(0.18 → 0.20 is `0-18-to-0-19` and `0-19-to-0-20`): each minor is a breaking
+release, and a skipped guide is a set of breaking changes the audit never looks
+for. The new version's number and its minimum Rust version come from crates.io,
+as in Section 3.
+
 ### Step 3 — Pre-Upgrade Audit
 
 Scan the **code root** (resolve per `.claude/docs/code-root-resolution.md`) for code that uses APIs known to be deprecated or changed in the
@@ -79,6 +87,14 @@ Ask the user before making any changes:
 > (This will update the pinned version and add migration notes — it does NOT
 > change any source files. Source migration is done manually or via stories.)"
 
+On Bevy, the engine version is pinned in `Cargo.toml`, not by an installed
+editor, so Step 5 has one more write. Ask it as its own question after this one:
+"May I set `bevy = "[new major.minor]"` in `Cargo.toml` and run
+`cargo update -p bevy`?" Say what it does: the next build compiles the new Bevy,
+and it fails until the code is migrated. A "no" is a valid answer — the reference
+docs and `project.yaml` are then ahead of the build until the developer makes
+the change.
+
 Wait for explicit confirmation before continuing.
 
 ### Step 5 — Update VERSION.md
@@ -102,6 +118,14 @@ After confirmation:
    first, then update `engine.version` to `[new-version]` so the primary config
    store stays in sync with VERSION.md.
 
+4. **Bevy, only if the user said yes in Step 4:** edit the `bevy = "…"` line in
+   `Cargo.toml` to the new major.minor, then run `cargo update -p bevy`, and
+   report the `Updating bevy v… -> v…` line it prints. The edit is what moves
+   the version: Cargo reads `bevy = "0.19"` as any 0.19.x, so `cargo update`
+   alone stays on 0.19 (verified with cargo 1.99.1: it locked 0 packages and
+   noted 0.20.1 as available; after the edit the same command updated bevy
+   v0.19.1 -> v0.20.1).
+
 ### Step 6 — Post-Upgrade Reminder
 
 After updating VERSION.md, output:
@@ -111,8 +135,9 @@ VERSION.md updated: [engine] [old-version] → [new-version]
 
 Next steps:
 1. Migrate deprecated API usages in the [N] files listed above
-2. Run /setup-engine refresh after upgrading the actual engine binary to
-   verify no new deprecations were missed
+2. Run /setup-engine refresh after upgrading the actual engine binary (on
+   Bevy: after the Cargo.toml edit and `cargo update -p bevy`) to verify no new
+   deprecations were missed
 3. Run /architecture-review — the engine upgrade may invalidate ADRs that
    reference specific APIs or engine capabilities
 4. If any ADRs are invalidated, run /propagate-design-change to update

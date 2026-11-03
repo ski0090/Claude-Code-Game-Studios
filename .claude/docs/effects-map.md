@@ -1100,6 +1100,7 @@ The list is a YAML list of these strings. Skills check whether the current decis
 | Godot | `gdunit4` | `godot-test`, `WAT` |
 | Unity | `unity-test-framework` | `nunit`, custom |
 | Unreal | `unreal-automation` | Google Test, custom |
+| Bevy | `cargo-test` (Rust's built-in test harness) | custom |
 
 ---
 
@@ -1110,7 +1111,7 @@ The list is a YAML list of these strings. Skills check whether the current decis
 | **qa-plan** | Test plan tailored to framework's idioms (assertion style, fixture pattern, parameterized tests) |
 | **dev-story** | Test framework name passed to programmer subagent in implementation brief |
 | **regression-suite** | Test file naming and discovery patterns match framework conventions |
-| **test-setup** | Scaffolds the right test layout for the engine (gdUnit4 under `addons/gdUnit4/` + `tests/` for Godot; `Assets/Tests/` asmdefs for Unity; `Source/<Module>/Private/Tests/` for Unreal) |
+| **test-setup** | Scaffolds the right test layout for the engine (gdUnit4 under `addons/gdUnit4/` + `tests/` for Godot; `Assets/Tests/` asmdefs for Unity; `Source/<Module>/Private/Tests/` for Unreal; `tests/unit/main.rs` and `tests/integration/main.rs`, each `mod`-declaring its system files, for Bevy) |
 | **smoke-check** | Invokes framework-appropriate test runner |
 
 ---
@@ -1237,6 +1238,8 @@ closing, or produces a warning and lets work continue — per test type
 > - Godot: gdunit4 coverage report (markdown export)
 > - Unity: Unity Test Framework coverage (xml export)
 > - Unreal: gcov-style coverage from clang flags
+> - Bevy: not pinned — this repo sources no coverage tool for Rust, so name the
+>   one the project uses before relying on `qa.coverage_minimum`
 > CCGS does not unify these — gate-check reads the engine-appropriate report.
 
 ---
@@ -1300,7 +1303,7 @@ closing, or produces a warning and lets work continue — per test type
 
 > **Different axis from `workflow`.** `workflow` controls *what docs are required.*
 > `team.size` controls *which agents exist to make them.* A solo dev on
-> `workflow: full` still doesn't need all 49 agents — they need the same coverage
+> `workflow: full` still doesn't need all 50 agents — they need the same coverage
 > from a smaller active set.
 
 ---
@@ -1311,7 +1314,7 @@ closing, or produces a warning and lets work continue — per test type
 |-------|-----------|-------|
 | `individual` | Core 8: `producer`, `game-designer`, `gameplay-programmer`, engine-specialist (engine-driven), `technical-artist`, `sound-designer`, `qa-tester`, `writer`. **Default.** | Directors and lead-* run only on explicit invocation (e.g. via `/architecture-decision`). Specialists outside the core 8 routed through their nearest core agent. Each `team-*` skill names its own set per value, which can sit outside the core 8 (`team-release` runs `release-manager`); each skill's own `team.size` list is authoritative, and the Affected skills table below mirrors it. |
 | `small` | Core 15: directors (CD, TD, PR) + leads (LP, AD, QL, ND) + game-designer + systems-designer + engine-specialist + technical-artist + sound-designer + qa-tester + ux-designer + writer | `team-*` skills add their `small` set (below); most reach their full pipeline only at `studio`. |
-| `studio` | All 49 agents available. Engine sub-specialists (e.g. `unity-dots-specialist` separate from `unity-specialist`) routed when relevant. The adversarial review pass in `team-combat`, `team-ui` and `team-polish`. | Commercial titles, learning the full org chart, large teams with parallel work. |
+| `studio` | All 50 agents available. Engine sub-specialists (e.g. `unity-dots-specialist` separate from `unity-specialist`) routed when relevant. The adversarial review pass in `team-combat`, `team-ui` and `team-polish`. | Commercial titles, learning the full org chart, large teams with parallel work. |
 
 ---
 
@@ -1710,7 +1713,7 @@ required at `standard` and `minimal` levels.
 
 **Controls:** Which engine-specific specialist agents are routed to for code
 implementation, review, and architecture validation  
-**Values:** `Godot` | `Unity` | `Unreal`  
+**Values:** `Godot` | `Unity` | `Unreal` | `Bevy`  
 **Default:** `[UNSET]` — must be configured via `/setup-engine`  
 **Set by:** `/setup-engine`  
 **Read by:** `dev-story`, `code-review`, `architecture-decision`, `create-architecture`, `team-combat`, `team-ui`, `team-audio`
@@ -1733,6 +1736,7 @@ implementation, review, and architecture validation
 | **Godot** | `godot-gdscript-specialist` (GDScript) or `godot-csharp-specialist` (C#) — driven by `engine.language` | `godot-shader-specialist` | `godot-specialist` | `godot-gdextension-specialist` |
 | **Unity** | `unity-specialist` | `unity-shader-specialist` | `unity-ui-specialist` | `unity-addressables-specialist`, `unity-dots-specialist` |
 | **Unreal** | `unreal-specialist` | `unreal-specialist` | `ue-umg-specialist` | `ue-gas-specialist`, `ue-blueprint-specialist`, `ue-replication-specialist` |
+| **Bevy** | `bevy-specialist` | `bevy-specialist` | `bevy-specialist` | — |
 | **[UNSET]** | No specialist spawned — warning emitted | No specialist spawned | No specialist spawned | None |
 
 ---
@@ -1762,7 +1766,7 @@ implementation, review, and architecture validation
 **Values:** strings — shell-executable commands
 **Default:** `[UNSET]` — populated by `/setup-engine` with engine-typical defaults
 **Set by:** `/setup-engine`, `/settings`
-**Written by:** `/setup-engine`, `/settings`. **Read by:** `test` — `/smoke-check`, `/hotfix` (narrowed to the affected suite), `/bug-report` (verify mode, narrowed to the affected suite), `/day-one-patch` (targeted fix and, when set, the broader regression — NOT ASSESSED if unset), `/dev-story` (Godot parse-check executable resolution), `/test-setup` (the `<Project>.` filter root on Unreal), `project-coherence.sh`; `smoke` — `/dev-story` (Unity parse check), `/smoke-check` (build check when tests are WAIVED); `build` — `/smoke-check` (build check when tests are WAIVED and `smoke` is unset), `project-coherence.sh`; `run` — `/dev-story` (Phase 6 step 4, the run-and-observe step). `/launch-checklist` and `/regression-suite` name these commands but do not run them.
+**Written by:** `/setup-engine`, `/settings`. **Read by:** `test` — `/smoke-check`, `/hotfix` (narrowed to the affected suite), `/bug-report` (verify mode, narrowed to the affected suite), `/day-one-patch` (targeted fix and, when set, the broader regression — NOT ASSESSED if unset), `/dev-story` (Godot parse-check executable resolution), `/test-setup` (the `<Project>.` filter root on Unreal), `project-coherence.sh`; `smoke` — `/dev-story` (Unity and Bevy parse check), `/smoke-check` (build check when tests are WAIVED); `build` — `/smoke-check` (build check when tests are WAIVED and `smoke` is unset), `project-coherence.sh`; `run` — `/dev-story` (Phase 6 step 4, the run-and-observe step). `/launch-checklist` and `/regression-suite` name these commands but do not run them.
   *(Derived by grep. A helper-based read would not show up, so treat this list as the verified floor, not a ceiling.)*
 
 **Priority chain:** `commands.*` in `project.yaml` → engine-typical default → no command available
@@ -1820,7 +1824,7 @@ keys are inside the locked file, not a local override).
 | `build` | Full project build for CI or release. `/smoke-check` runs it only as the WAIVED-path build check when `commands.smoke` is unset; `project-coherence.sh` (which `/smoke-check` runs first) checks the export preset it names, and `/launch-checklist` only asks whether the build produces a valid artifact. |
 | `test` | Run the full test suite. Run by `/smoke-check` and, narrowed to the affected suite, by `/hotfix`, `/bug-report` (verify mode) and `/day-one-patch`; `project-coherence.sh` checks the runner it names. `/regression-suite` does **not** run it. |
 | `run` | Launch the **game** windowed at a fixed resolution — not the editor. Used by `/dev-story` Phase 6 step 4 to observe the feature and retain a screenshot; see `.claude/docs/run-and-observe.md` for the per-engine capture flags that are appended to it. |
-| `smoke` | Minimal "does it boot?" check. Run by `/dev-story` as the Unity parse check (Phase 6 step 2), and by `/smoke-check` as the build check when `qa.level: minimal` waives tests. |
+| `smoke` | Minimal "does it boot?" check. Run by `/dev-story` as the Unity and Bevy parse check (Phase 6 step 2), and by `/smoke-check` as the build check when `qa.level: minimal` waives tests. |
 
 ---
 
@@ -1830,13 +1834,16 @@ When `/setup-engine` runs, it populates `commands` based on engine choice — ex
 the **build** row, which it must **ask** for. The build artifact is named by a
 project-defined string (a Godot export preset, a Unity build target), and no
 engine reference in this repo can source it. See `/setup-engine` §"The Godot
-`build` row must not hardcode `'Linux/X11'`".
+`build` row must not hardcode `'Linux/X11'`". Bevy's `build` names no such
+string — Cargo decides the output path under `target/` — so all four Bevy rows
+are written as they stand.
 
 | Engine | build | test | run | smoke |
 |--------|-------|------|-----|-------|
 | Godot | `godot --headless --export-debug '<PRESET>'` | `godot --headless -s -d --remote-debug tcp://127.0.0.1:0 res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests --ignoreHeadlessMode` | `godot --path . --windowed --resolution 1280x720` | `godot --headless --quit-after 5` |
 | Unity | `"<Unity editor>" -batchmode -quit -projectPath . -buildTarget <TARGET> -build<PLATFORM>Player Builds/<Target>/<Game>.exe` | `"<Unity editor>" -batchmode -runTests -projectPath . -testPlatform EditMode -testResults test-results/editmode.xml` | `Builds/<Target>/<Game>.exe -screen-width 1280 -screen-height 720 -screen-fullscreen 0` | `"<Unity editor>" -batchmode -quit -projectPath . -logFile -` |
 | Unreal | `"<UE root>/Engine/Binaries/DotNET/AutomationTool/AutomationTool.exe" BuildCookRun -project="$(pwd -W 2>/dev/null || pwd)/<project>.uproject" -platform=Win64 -build -cook` (confirm per project) | `"<UE root>/Engine/Binaries/Win64/UnrealEditor-Cmd.exe" "$(pwd -W 2>/dev/null || pwd)/<project>.uproject" -ExecCmds="Automation RunTests <project>.; Quit" -unattended -nullrhi -stdout -FullStdOutLogOutput` | `"<UE root>/Engine/Binaries/Win64/UnrealEditor.exe" "$(pwd -W 2>/dev/null || pwd)/<project>.uproject" -game -windowed -ResX=1280 -ResY=720` | `"<UE root>/Engine/Binaries/Win64/UnrealEditor-Cmd.exe" "$(pwd -W 2>/dev/null || pwd)/<project>.uproject" -game -nullrhi -unattended -stdout -ExecCmds="Quit"` |
+| Bevy | `cargo build --release` | `cargo test` | `cargo run` | `cargo check --all-targets` |
 
 The Unreal row is Windows'. `/setup-engine` writes the Linux block (`Engine/Build/BatchFiles/RunUAT.sh`,
 `Engine/Binaries/Linux/UnrealEditor`) on Linux, and on macOS only `build`, leaving `test`, `run` and
@@ -1864,7 +1871,7 @@ Users override per-project as needed via `/settings commands.<field>=<value>` or
 | **smoke-check** | Runs `commands.test`, or the engine's default when it is unset; on Unreal it builds the editor target first. Critical path for QA hand-off. |
 | **launch-checklist** | Emits a checklist **item** asking whether the build produces a valid artifact. It does **not** run `commands.build`; the verification is a human step. |
 | **validate-push.sh** | Does **not** read `commands.*`. It warns on pushes to protected branches (`main`/`master`/`release/*`) and runs no build or smoke command — the block path in it is commented out, so it never fails a push. |
-| **dev-story** | Phase 6 step 2 is the parse check: `.claude/scripts/godot-parse-check.gd` on Godot, `commands.smoke` on Unity, the editor-target build on Unreal. Phase 6 step 4 runs `commands.run` — the windowed game launch — to observe the feature and retain a screenshot (`.claude/docs/run-and-observe.md`). |
+| **dev-story** | Phase 6 step 2 is the parse check: `.claude/scripts/godot-parse-check.gd` on Godot, `commands.smoke` on Unity and Bevy, the editor-target build on Unreal. Phase 6 step 4 runs `commands.run` — the windowed game launch — to observe the feature and retain a screenshot (`.claude/docs/run-and-observe.md`). |
 | **regression-suite** | Maps coverage by **globbing test filenames**. It does **not** invoke `commands.test`, so coverage here means "a test file exists", never "a test passed". |
 
 ---
@@ -1889,8 +1896,8 @@ conventions into a brief, manifest or spec. **NOT by `/code-review` and NOT by
 > and `validate-commit.sh` does not warn on violations — neither contains any
 > naming logic. If you need enforcement, it has to be added.
 >
-> **Asset filenames.** `validate-assets.sh` warns when a file under Godot's
-> `assets/` has an uppercase letter, a space or a hyphen in its name (it expects
+> **Asset filenames.** `validate-assets.sh` warns when a file under Godot's or
+> Bevy's `assets/` has an uppercase letter, a space or a hyphen in its name (it expects
 > lowercase with underscores), and it takes no config input. `/asset-spec`
 > specifies asset names from `naming.*`. Unity's `Assets/` and Unreal's `Content/`
 > are not naming-checked: those engines name assets in PascalCase. On Godot-C#,
@@ -1907,17 +1914,20 @@ conventions into a brief, manifest or spec. **NOT by `/code-review` and NOT by
 
 ### Fields
 
-| Field | Values | Godot default | Unity default | Unreal default |
-|-------|--------|---------------|---------------|----------------|
-| `classes` | `PascalCase` \| `snake_case` \| `camelCase` | PascalCase | PascalCase | PascalCase |
-| `variables` | `snake_case` \| `camelCase` | snake_case | camelCase | camelCase |
-| `constants` | `SCREAMING_SNAKE` \| `PascalCase` | SCREAMING_SNAKE | SCREAMING_SNAKE | SCREAMING_SNAKE |
-| `signals` (Godot) / `events` (Unity, Unreal) | `past_tense` \| `on_event_name` | past_tense | on_event_name | OnEventName |
-| `files` | `snake_case` \| `PascalCase` \| `kebab-case` | snake_case | PascalCase | PascalCase |
-| `scenes` / `prefabs` | `snake_case` \| `PascalCase` | snake_case | PascalCase | PascalCase |
+| Field | Values | Godot default | Unity default | Unreal default | Bevy default |
+|-------|--------|---------------|---------------|----------------|--------------|
+| `classes` | `PascalCase` \| `snake_case` \| `camelCase` | PascalCase | PascalCase | PascalCase | PascalCase |
+| `variables` | `snake_case` \| `camelCase` | snake_case | camelCase | camelCase | snake_case |
+| `constants` | `SCREAMING_SNAKE` \| `PascalCase` | SCREAMING_SNAKE | SCREAMING_SNAKE | SCREAMING_SNAKE | SCREAMING_SNAKE |
+| `signals` (Godot) / `events` (Unity, Unreal, Bevy) | `past_tense` \| `on_event_name` | past_tense | on_event_name | OnEventName | past_tense |
+| `files` | `snake_case` \| `PascalCase` \| `kebab-case` | snake_case | PascalCase | PascalCase | snake_case |
+| `scenes` / `prefabs` | `snake_case` \| `PascalCase` | snake_case | PascalCase | PascalCase | snake_case |
 
 > **`signals` vs `events`:** Godot uses signals natively; Unity uses C# events
-> or UnityEvents; Unreal uses delegates and dynamic multicast. The field stays
+> or UnityEvents; Unreal uses delegates and dynamic multicast; Bevy uses messages
+> and observer events, both plain Rust types, so `past_tense` names the type
+> (`EnemyDied`). The Bevy column's casing rows are rustc's default lints — see
+> `/setup-engine` §5.5.1. The field stays
 > named `signals` in project.yaml for consistency across engines — interpret as
 > "event-like callbacks" regardless of engine.
 
@@ -2456,9 +2466,9 @@ platform:
   cert_tier: none            # none | itch | steam | console
 
 engine:
-  name: "Godot"              # Godot | Unity | Unreal — set by /setup-engine
+  name: "Godot"              # Godot | Unity | Unreal | Bevy — set by /setup-engine
   version: "4.7"
-  language: "GDScript"       # GDScript | C# | C++ | Blueprint
+  language: "GDScript"       # GDScript | C# | C++ | Blueprint | Rust
   rendering: "Forward+"
   physics: "Jolt"
 

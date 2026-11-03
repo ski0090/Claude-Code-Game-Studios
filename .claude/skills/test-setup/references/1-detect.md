@@ -19,10 +19,15 @@
    - Glob `tests/unit/` and `tests/integration/` — do subdirectories exist?
    - Glob `.github/workflows/` — does a CI workflow file exist?
    - Glob `addons/gdUnit4/bin/GdUnitCmdTool.gd` (Godot — note the capital U) or
-     `Assets/Tests/EditMode/` (Unity) or `Source/*/Private/Tests/` (Unreal) for
+     `Assets/Tests/EditMode/` (Unity) or `Source/*/Private/Tests/` (Unreal) or
+     `tests/unit/main.rs` and `tests/integration/main.rs` (Bevy) for
      engine-specific artifacts. These are the **test roots** in
      `.claude/docs/directory-structure.md`; tests anywhere else are never compiled
-     on Unity or Unreal.
+     on Unity or Unreal, and on Bevy a file under `tests/unit/` or
+     `tests/integration/` is compiled only when that folder's `main.rs` declares
+     it. On Bevy also check `Cargo.toml` and `src/lib.rs`: tests under `tests/`
+     link only the library crate's `pub` items, so without `src/lib.rs` they
+     cannot reach the game.
 
 3. **Report findings**:
    - "Engine: [engine]. Test directory: [found / not found]. CI workflow: [found / not found]."

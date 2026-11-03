@@ -14,7 +14,9 @@ It creates `tests/README.md`, `tests/smoke/critical-paths.md`,
 root: for Godot `tests/unit/` and `tests/integration/` (placeholder files, and
 no runner script — gdUnit4's `addons/gdUnit4/bin/GdUnitCmdTool.gd` is the
 runner); for Unity `Assets/Tests/EditMode/` and `Assets/Tests/PlayMode/` with
-their `.asmdef` files; for Unreal `Source/<Module>/Private/Tests/`. When the
+their `.asmdef` files; for Unreal `Source/<Module>/Private/Tests/`; for Bevy
+`tests/unit/main.rs` and `tests/integration/main.rs`, comment-only test roots
+(`cargo test` is the runner, and an undeclared file is never compiled). When the
 infrastructure already exists it exits early unless `force` is passed, and
 `force` only creates missing files — it never overwrites. No director gates
 apply. The verdict is COMPLETE when the scaffold is in place.
@@ -179,11 +181,39 @@ Fixture defaults.
 
 ---
 
+### Case 6: Bevy Project — comment-only test roots, no scaffolded test
+
+**Fixture:**
+- `project.yaml` has `engine.name: Bevy`, `engine.version: "0.20"`,
+  `commands.test: cargo test`
+- `Cargo.toml` and `src/lib.rs` exist; no `tests/`, no `.github/workflows/`
+
+**Input:** `/test-setup`
+
+**Expected behavior:**
+1. Phase 1 reports "Engine: Bevy. Test directory: not found. CI workflow: not found."
+2. The plan lists `tests/unit/main.rs` and `tests/integration/main.rs` and no runner script
+3. After approval, both `main.rs` files hold comments only (how to declare
+   `mod <system>;`), no `#[test]`, so `cargo test` compiles and runs zero tests
+4. The README gives `cargo test`, says a failing test and a compile error both
+   exit 101 and how to tell them apart, and shows the headless
+   `MinimalPlugins` + `app.update()` pattern
+5. `.github/workflows/tests.yml` installs the Ubuntu packages from Bevy's
+   `docs/linux_dependencies.md`, then runs `cargo test`
+
+**Assertions:**
+- [ ] No test function is scaffolded: a fresh setup runs zero tests, never a pass
+- [ ] The README and the plan say an undeclared file under `tests/unit/` is never compiled
+- [ ] The CI workflow installs Bevy's Linux dependencies before `cargo test`
+- [ ] Verdict is COMPLETE
+
+---
+
 ## Protocol Compliance
 
 - [ ] Reads the engine (`project.yaml`, then `technical-preferences.md`) before generating any scaffold
 - [ ] Generates engine-appropriate test runner config and CI workflow (not generic)
-- [ ] Puts unit and integration tests in the engine's test root (`tests/` for Godot, `Assets/Tests/` for Unity, `Source/<Module>/Private/Tests/` for Unreal)
+- [ ] Puts unit and integration tests in the engine's test root (`tests/` for Godot, `Assets/Tests/` for Unity, `Source/<Module>/Private/Tests/` for Unreal, `tests/unit/main.rs` and `tests/integration/main.rs` for Bevy)
 - [ ] Creates `production/qa/evidence/` — the path the Phase 6 summary reports
 - [ ] Asks approval before creating files
 - [ ] Exits early when infrastructure exists; `force` creates only missing files and never overwrites
@@ -201,3 +231,6 @@ Fixture defaults.
   in a now-Godot project) is not tested.
 - A Unity project without `com.unity.test-framework` (the skill asks to add the
   version the installed editor bundles, never a copied number) is not tested.
+- A Bevy project without `src/lib.rs` (the summary says tests under `tests/`
+  cannot reach the game) is not tested. The Bevy CI workflow has not been run
+  on GitHub.

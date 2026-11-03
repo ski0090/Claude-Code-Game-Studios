@@ -16,8 +16,9 @@ or Both) before showing the Technology Stack. It then:
   `project.yaml` — the primary config store — after "May I write the `engine`,
   `specialists`, `naming`, and `commands` blocks to `project.yaml`?"
 - updates or creates `docs/engine-reference/<engine>/`, scaffolds
-  `project.godot` for Godot (never for Unity or Unreal), and reads everything
-  back with `project-coherence.sh`
+  `project.godot` for Godot or a Cargo crate (`Cargo.toml`, `src/lib.rs`,
+  `src/main.rs`, `tests/unit/main.rs`, `assets/`) for Bevy (never a project for
+  Unity or Unreal), and reads everything back with `project-coherence.sh`
 
 On a re-run it edits existing `project.yaml` blocks in place rather than
 duplicating them. No director gates apply. The verdict is COMPLETE when the
@@ -283,6 +284,53 @@ Fixture defaults.
 
 ---
 
+### Case 9: Bevy 0.20 — fixed cargo commands, Cargo crate scaffolded
+
+**Fixture:**
+- Placeholders only in `technical-preferences.md`; no `engine` block in `project.yaml`
+- No `Cargo.toml` and no `Cargo.lock` at the repo root; `docs/engine-reference/bevy/VERSION.md` pins 0.20
+- `cargo --version` and `rustc --version` answer (rustc 1.97.1 or newer); the user approves every write and declines the first `cargo check`
+
+**Input:** `/setup-engine bevy 0.20`
+
+**Expected behavior:**
+1. Full-spec mode: Section 2 is skipped, and no language question is asked (Bevy is Rust)
+2. Section 3 probes `cargo --version` and `rustc --version`, compares rustc with
+   crates.io's `rust_version` for the release, and reports the installed Bevy as
+   NOT DETERMINED because there is no `Cargo.lock` — never "no Bevy installed"
+3. CLAUDE.md gets the Bevy stack (Language `Rust`, Build System `Cargo`) and the
+   import line `@docs/engine-reference/bevy/VERSION.md`
+4. `engine` block: `name: "Bevy"`, `version: "0.20"`, `language: "Rust"`,
+   `rendering: "Forward"`, `physics: "[TO BE CONFIGURED]"`, straight from the
+   `any` row — no project-shape question, and no physics crate picked; no `engine.path`
+5. `specialists.code`, `.shader` and `.ui` are `bevy-specialist`; `additional` is `[]`
+6. `naming`: PascalCase classes, snake_case variables, files and scenes,
+   SCREAMING_SNAKE constants with no `# UNVERIFIED` comment, `past_tense` signals
+7. `commands` are written as they stand, none asked: `cargo build --release`,
+   `cargo test`, `cargo run`, `cargo check --all-targets`
+8. Section 6 rates 0.20 HIGH risk; Section 7 finds VERSION.md already pinning
+   0.20 and writes only its `Installed at pin time` row (NOT DETERMINED)
+9. Section 7.5 asks, then writes `Cargo.toml` (`bevy = "0.20"`, edition 2024, and
+   bevy.org's two dev-profile blocks), `src/lib.rs` with a `pub` `GamePlugin`,
+   `src/main.rs`, `tests/unit/main.rs` and `assets/`; it offers `cargo check
+   --all-targets`, warning that the first build takes minutes, and on the
+   decline reports `Cargo project NOT VERIFIED — <reason>`
+10. Section 8.5 names the `rendering and physics`, `no Cargo.lock` and
+    `pinned-vs-installed` `[NOT CHECKED]` lines as expected; verdict COMPLETE
+
+**Assertions:**
+- [ ] No language question and no project-shape question is asked
+- [ ] `engine.name` is `Bevy`, `engine.version` `0.20`, `engine.language` `Rust`, `engine.physics` `[TO BE CONFIGURED]`
+- [ ] Every `specialists` member is `bevy-specialist` and `commands` holds the four cargo commands, none asked
+- [ ] The installed Bevy is reported NOT DETERMINED, not absent
+- [ ] The Cargo files are written only after "May I create", and `Cargo.toml` pins `bevy = "0.20"`
+- [ ] The scaffold is reported NOT VERIFIED when the build did not run
+- [ ] Verdict is COMPLETE
+- [ ] Variant — a `Cargo.toml` already exists: it is not overwritten, the skill
+  says so and skips Section 7.5's writes
+
+---
+
 ## Protocol Compliance
 
 - [ ] Presents draft configuration before asking to write
@@ -291,7 +339,7 @@ Fixture defaults.
 - [ ] Dual-writes `project.yaml` and `technical-preferences.md`, then reads `project.yaml` back to confirm they agree
 - [ ] On re-run, edits existing `project.yaml` blocks in place without duplicating them
 - [ ] Writes the probed editor path into `commands.*` — for Unity always, for Godot whenever `godot` is not on `PATH` — never a bare executable that does not resolve
-- [ ] Never defaults the Godot export preset or the Unity build target — asks for it; Unreal's `commands` are best-effort values matched to the machine's OS (`-platform=Win64` on Windows, `Linux` on Linux) under a `# TODO` comment; on macOS only `build` is written, and `test`, `run` and `smoke` stay TODO lines
+- [ ] Never defaults the Godot export preset or the Unity build target — asks for it; writes Bevy's four cargo commands as they stand; Unreal's `commands` are best-effort values matched to the machine's OS (`-platform=Win64` on Windows, `Linux` on Linux) under a `# TODO` comment; on macOS only `build` is written, and `test`, `run` and `smoke` stay TODO lines
 - [ ] Writes the Section 3 probe into VERSION.md's `Installed at pin time` row whatever the outcome, after asking "May I record `Installed at pin time: …` in `docs/engine-reference/<engine>/VERSION.md`?"
 - [ ] Verdict is COMPLETE after configuration is written
 
@@ -311,3 +359,6 @@ Fixture defaults.
   "no engine installed"; not separately tested.
 - A Blueprint-primary Unreal answer (`engine.language: "Blueprint"`) follows
   Case 3 with the other Language line; not separately tested.
+- The Bevy `upgrade` path (editing `Cargo.toml`'s `bevy = "0.X"` and running
+  `cargo update -p bevy` only on a yes) is not fixture-tested, like the other
+  upgrades.

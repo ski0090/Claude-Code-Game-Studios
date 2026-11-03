@@ -14,8 +14,13 @@ code. This file is the procedure for applying it.
 | Godot | `src/` | No constraint; Godot loads from `res://` anywhere under the project root |
 | Unity | `Assets/` | Unity compiles **only** `Assets/` and `Packages/` |
 | Unreal | `Source/<Module>/` | UnrealBuildTool discovers modules under `Source/`; content lives in `Content/` |
+| Bevy | `src/` | No constraint either; Cargo's default layout (`src/lib.rs`, `src/main.rs`) |
 
-`src/` is the **Godot row of that table, not a universal path.**
+`src/` is the **Godot and Bevy row of that table, not a universal path.** The two
+share it, so the tree derivation below resolves either one to `src/` without
+having to tell them apart. When the engine itself matters, the project file
+decides it: `project.godot` for Godot, a `Cargo.toml` with a `bevy` dependency
+for Bevy.
 
 ## Resolution order
 
@@ -67,4 +72,5 @@ write to the wrong directory.
 Where a skill says `src/`, read it as *the code root* and substitute the table
 above. Where a skill greps, glob the resolved root. Where a skill writes,
 write under the resolved root and use the engine's own conventions beneath it
-(`Assets/Scripts/<System>/` on Unity, `Source/<Module>/<System>/` on Unreal).
+(`Assets/Scripts/<System>/` on Unity, `Source/<Module>/<System>/` on Unreal, a
+`pub mod <system>;` module under `src/` on Bevy, declared from `src/lib.rs`).

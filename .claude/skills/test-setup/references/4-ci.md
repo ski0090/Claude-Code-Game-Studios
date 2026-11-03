@@ -10,6 +10,7 @@
 - Godot 4
 - Unity
 - Unreal Engine
+- Bevy
 
 ### Godot 4
 
@@ -179,5 +180,54 @@ editor target in `Source/[ProjectName]Editor.Target.cs`. `actions/checkout@v7`
 and `actions/upload-artifact@v7` run on Node.js 24, which needs Actions Runner
 2.327.1 or newer: update the self-hosted runner before the first run
 (https://github.com/actions/checkout/blob/v7.0.1/README.md).
+
+### Bevy
+
+Create `.github/workflows/tests.yml`:
+
+```yaml
+name: Automated Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run cargo test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      # Bevy's Ubuntu build dependencies, from docs/linux_dependencies.md in
+      # the bevy crate (the second pair is needed while the default wayland
+      # feature is on). Without them the build stops in a -sys crate.
+      - name: Install Bevy's Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ pkg-config libx11-dev libasound2-dev libudev-dev libxkbcommon-x11-0
+          sudo apt-get install -y libwayland-dev libxkbcommon-dev
+
+      # Bevy sets a minimum Rust version (rust-version in its Cargo.toml):
+      # bring the runner's toolchain up to date before building.
+      - name: Update Rust
+        run: rustup update stable && rustup default stable
+
+      # Compiles the crate (and Bevy) first, then runs every test target.
+      # --no-fail-fast: a failing binary does not hide the ones after it.
+      - name: Run tests
+        run: cargo test --no-fail-fast
+```
+
+Note: the packages are the Ubuntu line of `docs/linux_dependencies.md` in the
+`bevy` 0.20.1 crate. Bevy 0.20.1 sets `rust-version = "1.97.1"`. A cold build
+compiles Bevy itself, so the first run takes many minutes. This workflow has
+not been run on GitHub here: confirm the first run goes green.
 
 ---

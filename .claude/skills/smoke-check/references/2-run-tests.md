@@ -11,6 +11,7 @@
 - Godot 4
 - Unity: Edit Mode, then Play Mode as a second run
 - Unreal Engine: build first, commands per OS, macOS
+- Bevy: `cargo test`, a test failure and a compile error both exit 101
 - Unknown engine / not configured
 - Test runner not available here
 - Build check (the WAIVED path only)
@@ -156,6 +157,44 @@ Read the output, not the exit code: a failing test and a run that matched nothin
   not be found`) → FAIL: no test ran. The exception: the editor never started (exit 126 or 127, `command not found`) — that is the runner not being
   available, below, and `NOT ASSESSED`.
 
+**Bevy** — Bevy has no editor: the runner is `cargo`, and the default is
+`cargo test` (Rust's built-in test harness). Run it under `timeout 1800`, not
+900: it compiles the crate before any test runs, and on a fresh clone that
+includes Bevy itself (a cold test build of a small Bevy 0.20.1 crate took about
+21 minutes). First check that `Cargo.toml` is in the project root; if it is not,
+report `NOT ASSESSED — no Cargo.toml in the project root` and run nothing.
+```bash
+timeout 1800 cargo test 2>&1
+```
+Read the output, not only the exit code: **a failing test and a compile error
+both exit 101.** Each test binary (the library, the binary, each `tests/`
+target, the doctests) prints `running N tests`, a `test <path> ... ok`,
+`... FAILED` or `... ignored` line per test, and a summary,
+`test result: ok. P passed; F failed; I ignored; …` (`test result: FAILED. …`
+when one failed). Read in this order (the failing-test, compile-error,
+zero-test and pass rows were each seen on Bevy 0.20.1 with cargo 1.99.1):
+- A `test result: FAILED` line → FAIL; the failing tests are the
+  `test <path> ... FAILED` lines. Check this first: a doctest whose example does
+  not compile prints its `error[E…]` inside a failing test.
+- No `test result:` line at all, and an `error[E…]` or `error: could not
+  compile` line → FAIL: the code did not compile, so no test ran.
+- Exit 0 where **every** `running N tests` line says `running 0 tests` →
+  `NOT ASSESSED — no tests found`, not a pass. One zero line means nothing: the
+  binary target and the doctests print `running 0 tests` even when other
+  targets have tests. A file under `tests/unit/` that `tests/unit/main.rs` does
+  not declare with `mod <system>;` is never compiled, so its tests land here.
+- Exit 0 with `0 passed` and only ignored tests → `NOT ASSESSED — every test
+  is ignored`: nothing ran.
+- Exit 0 with `test result: ok` lines and at least one passed → PASS.
+- Any other non-zero exit (a test binary that crashed, a dependency that did
+  not download) → FAIL. The exception: exit 126 or 127 (`cargo` not found) is
+  the runner not being available, below, and `NOT ASSESSED`.
+
+The counts are the sums over every `test result:` line. `cargo test` stops at
+the first test binary that fails, so after a failure they cover only the
+binaries that ran: say so in the report (`cargo test --no-fail-fast` runs them
+all).
+
 **Unknown engine / not configured:**
 "Engine not configured in `project.yaml` or
 `.claude/docs/technical-preferences.md`. Run `/setup-engine` to specify the
@@ -167,7 +206,8 @@ clearly:
 
 "Automated tests could not be executed — engine executable not found (checked
 `commands.test`, `engine.path` and `PATH`; set `engine.path`, or put the
-editor's full path in `commands.test`). Status will be recorded as NOT RUN.
+editor's full path in `commands.test`; on Bevy, `cargo` not found on `PATH`:
+install Rust with rustup). Status will be recorded as NOT RUN.
 Confirm test results from your local IDE
 or CI pipeline. Until you do, the verdict is NOT ASSESSED — not FAIL, and not
 a pass either: nothing has been observed about this build yet."
@@ -193,7 +233,9 @@ Phase 1 step 3 resolved, under the same timeout rules (`timeout 900`, or
 import line above first. Read the result as `/setup-engine` documents it:
 Godot `smoke` exits 0 even on a parse error, so a `SCRIPT ERROR` line in its
 output is a FAIL, and so is `Can't run project: no main scene defined` — the
-game cannot launch; Unity `smoke` exits 1 on a compile error; any other
+game cannot launch; Unity `smoke` exits 1 on a compile error; Bevy `smoke`
+(`cargo check --all-targets`, which compiles without running anything) exits
+101 with `error[E…]` lines on a compile error; any other
 non-zero exit is a FAIL. Record `Build check: PASS — [command] exit 0`,
 `FAIL — [reason]`, or `NOT RUN — [commands.smoke and commands.build unset |
 executable not found]`. A build check that did not run is named in the report

@@ -116,8 +116,10 @@ Any platform with one or more FAIL checks contributes to the overall FAIL verdic
 **NOT ASSESSED** if ANY of:
 - The automated suite is **unconfirmed NOT RUN** — nobody has reported a result
 - The runner could not run (gdUnit4 103 or 104, gdUnit4 or the Unity Test
-  Framework not installed), or it ran and executed zero tests
-  (`No test cases found`, `testcasecount="0"`, `No automation tests matched`)
+  Framework not installed, no `Cargo.toml` on Bevy), or it ran and executed zero
+  tests (`No test cases found`, `testcasecount="0"`, `No automation tests
+  matched`, every `running N tests` line at `running 0 tests` or only ignored
+  tests on Bevy)
 - Unity Play Mode tests exist and are `PlayMode: NOT RUN`, unconfirmed — the
   Edit Mode result does not cover them
 - A Batch 1 or Batch 2 check could not be executed (no build, engine not

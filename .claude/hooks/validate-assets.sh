@@ -31,8 +31,8 @@ fi
 [ -n "$CCGS_ROOT" ] && cd "$CCGS_ROOT" 2>/dev/null || true
 
 # Claude Code PostToolUse hook: Validates asset files after Write/Edit
-# Checks JSON validity of data files and, in Godot's assets/, naming conventions.
-# Asset roots per engine: Godot assets/, Unity Assets/, Unreal Content/.
+# Checks JSON validity of data files and, in Godot's and Bevy's assets/, naming conventions.
+# Asset roots per engine: Godot assets/, Unity Assets/, Unreal Content/, Bevy assets/.
 #
 # Exit behavior:
 #   exit 0 = success or advisory warnings only
@@ -95,7 +95,8 @@ WARNINGS=""   # Style/convention issues -- exit 0 with advisory message
 ERRORS=""     # Build-breaking issues -- exit 2 so Claude hears about it
 
 # ADVISORY: naming convention -- lowercase with underscores, the Godot
-# convention, so only in Godot's assets/. Unity and Unreal name assets in
+# convention and Bevy's (`naming.files: snake_case`), so only in the lowercase
+# assets/ those two share. Unity and Unreal name assets in
 # PascalCase with type prefixes; warning on every one of them trains the user
 # to ignore this hook. Naming issues warn, never block.
 # Uses grep -E (POSIX) not grep -P (Perl) for Windows Git Bash compatibility

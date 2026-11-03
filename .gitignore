@@ -113,6 +113,11 @@ Saved/
 # *.uasset
 # *.umap
 
+# === Engine: Bevy ===
+# Cargo's build output. Cargo.lock stays tracked: it pins the Bevy version the
+# game builds with, and project-coherence.sh compares it with engine.version.
+target/
+
 # === Compiled Shaders ===
 *.spv
 *.cso

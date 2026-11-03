@@ -300,4 +300,8 @@ Fixture defaults.
 - Integration stories (playtest records in `production/qa/playtests/`) and
   Config/Data stories (`production/qa/smoke-*.md`) are not tested here.
 - The no-argument path (the skill asks which scope to review) is not tested.
+- A Bevy Logic story (evidence in `tests/unit/[system].rs`, counted only when
+  `tests/unit/main.rs` declares it with `mod [system];`, or in the system's own
+  `#[cfg(test)] mod tests`) follows Case 7's stated-path pattern; not
+  separately tested.
 - The POTENTIALLY STALE freshness flag is not tested separately.

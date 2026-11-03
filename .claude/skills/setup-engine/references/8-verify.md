@@ -40,8 +40,10 @@ bash .claude/scripts/project-coherence.sh
 ```
 
 It compares `project.yaml` against `docs/engine-reference/<engine>/VERSION.md`,
-against `project.godot`, and against the engine binary actually on PATH, and it
-checks that the files `commands.build` and `commands.test` name exist.
+against `project.godot`, and against the engine binary actually on PATH (on
+Bevy, the bevy version `Cargo.lock` locks), and it checks that the files
+`commands.build` and `commands.test` name exist (on Bevy, the `Cargo.toml` the
+cargo commands need).
 
 **Report every `[DIFFERS]` line to the user and resolve it before finishing.**
 Each one means two files this skill just wrote disagree, or describe something
@@ -51,6 +53,15 @@ One is expected on a new Godot project: `commands.test` names the gdUnit4
 runner under `addons/gdUnit4/`, which `/test-setup` installs later. Report that
 line as expected, name `/test-setup` as the step that clears it, and never edit
 `commands.test` to make it go away. Every other `[DIFFERS]` line is resolved here.
+
+On Bevy, name these `[NOT CHECKED]` lines as expected rather than as gaps:
+`rendering and physics` always prints, because a Bevy project has no file that
+declares either. When Section 7.5's `cargo check` did not run, so does
+`declared version vs locked Bevy — no Cargo.lock`, and with it
+`pinned-vs-installed`, because `VERSION.md` still records NOT DETERMINED; both
+clear once a build writes `Cargo.lock` and Section 7.5's `Installed at pin time`
+update is made. A `[DIFFERS]` between `engine.version` and the bevy that
+`Cargo.lock` locks is a real one: the build compiles the locked version.
 
 **`[NOT CHECKED]` is not a pass.** Each such line names why a comparison could
 not be made -- an absent binary, a missing `project.godot`. Say which ones

@@ -11,7 +11,7 @@ After setup is complete, output:
 Engine Setup Complete
 =====================
 Engine:          [name] [version]
-Language:        [GDScript | C# | GDScript + C# | C# | C++ + Blueprint | Blueprint + C++]
+Language:        [GDScript | C# | GDScript + C# | C# | C++ + Blueprint | Blueprint + C++ | Rust]
 Knowledge Risk:  [LOW/MEDIUM/HIGH]
 Reference Docs:  [created/skipped]
 CLAUDE.md:       [updated]

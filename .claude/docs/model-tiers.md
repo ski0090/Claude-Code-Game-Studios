@@ -62,7 +62,7 @@ high-stakes output; otherwise write `model: sonnet` explicitly. Every skill
 declares a tier. Whether the tier takes effect depends on how the skill starts
 (see the table at the top of this file).
 
-**Agent model tiers.** 30 agents use `model: inherit` and run on the session's
+**Agent model tiers.** 31 agents use `model: inherit` and run on the session's
 model. 19 are pinned:
 
 - **opus (3):** `creative-director`, `producer`, `technical-director`. Under an

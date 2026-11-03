@@ -62,6 +62,11 @@ and any `test-results/` you saved runs into, for `.xml` files.
 For Unity projects: game-ci test runner outputs NUnit XML to `test-results/`
 by default.
 
+For Bevy projects: `cargo test` writes no result file; its results are the
+text it prints. Save each run's output, one file per run, into `test-results/`
+(`cargo test > test-results/run-01.log 2>&1`), or save CI's log of the
+`cargo test` step there.
+
 For Unreal projects: automation logs go to `Saved/Logs/`. Grep for
 `Result={Success}` and `Result={Fail}` — each test prints
 `Test Completed. Result={<status>}`
@@ -100,6 +105,14 @@ reads):
 - Its `result` attribute is `Passed`, `Failed`, `Inconclusive` or `Skipped`
   (`docs/engine-reference/unity/current-best-practices.md`, "Command Line");
   only `Passed` and `Failed` enter the history
+
+**Rust test harness output** (Bevy — a saved `cargo test` log):
+- Each test is a line `test <path> ... ok`, `test <path> ... FAILED` or
+  `test <path> ... ignored` (`ignored, <reason>` when the test gives one); the
+  path is the identifier. Only `ok` and `FAILED` enter the history
+- `test result: …` lines are per-binary summaries, not tests
+- `cargo test` stops at the first test binary that fails, so a run's log may
+  not list the binaries after it: a test missing from a run is not a pass
 
 **Plain text logs**:
 - Grep for pass/fail patterns:
@@ -166,6 +179,10 @@ Skip mechanisms, by engine — name only the one for the project's engine:
   cover them. Log it in the quarantine section and ask the user how their C#
   tests are skipped; do not invent an attribute.
 - **Unity (NUnit)**: `[Ignore("flaky: [cause]")]` — NUnit 3 requires the reason
+- **Bevy (Rust's test harness)**: `#[ignore = "flaky: [cause]"]` under the
+  test's `#[test]`; the run prints `test <path> ... ignored, flaky: [cause]`
+  (run on Bevy 0.20.1), and `cargo test -- --ignored` runs only the ignored
+  tests when you check a fix
 - **Unreal**: **NOT SOURCEABLE** — `docs/engine-reference/unreal/` documents no way
   to skip an automation test. Log it in the quarantine section and ask the user
   how their CI excludes a test; do not invent a flag.

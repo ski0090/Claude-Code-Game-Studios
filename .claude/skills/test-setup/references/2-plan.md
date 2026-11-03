@@ -13,14 +13,16 @@ Based on the engine detected and the existing state, present a plan:
 I will create the following (skipping any that already exist):
 
 tests/
-  unit/           — Isolated unit tests for formulas, state, and logic   (Godot only)
-  integration/    — Cross-system tests and save/load round-trips         (Godot only)
+  unit/           — Isolated unit tests for formulas, state, and logic   (Godot, Bevy)
+  integration/    — Cross-system tests and save/load round-trips         (Godot, Bevy)
   smoke/          — Critical path test list (15-minute manual gate)
   README.md       — Test framework documentation
 
 [Unity/Unreal: unit and integration tests go under the engine's test root
  instead — Unity Assets/Tests/EditMode|PlayMode/, Unreal
  Source/<Module>/Private/Tests/ — because neither compiles code in tests/]
+[Bevy: unit/ and integration/ each get a main.rs, the test target Cargo
+ builds, holding comments only until a test file is declared in it]
 
 production/qa/
   evidence/       — Screenshot and manual test sign-off records

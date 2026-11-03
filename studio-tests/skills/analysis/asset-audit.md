@@ -3,7 +3,8 @@
 ## Skill Summary
 
 `/asset-audit` audits the engine's asset root — `assets/` (art, audio, vfx,
-shaders, data) on Godot, `Assets/` on Unity, `Content/` on Unreal — for naming
+shaders, data) on Godot, `Assets/` on Unity, `Content/` on Unreal, `assets/`
+(without `*.meta` files) on Bevy — for naming
 convention compliance, size budgets, format standards, orphaned assets and
 missing assets. It reads the art bible or asset standards from the design docs
 (Phase 1), resolves the engine and its code root and scans the asset root with
@@ -11,7 +12,8 @@ Glob (Phase 2), measures sizes and formats with the pre-approved read-only
 commands (`stat`, `file`, `od`, `wc`, `du`), and checks Godot names against its
 own patterns — art `[category]_[name]_[variant]_[size].[ext]`, audio
 `[category]_[context]_[name]_[variant].[ext]`, all lowercase with underscores —
-and Unity and Unreal names only against a rule the art bible states. Orphaned
+and Unity and Unreal names only against a rule the art bible states; Bevy names
+take the lowercase-with-underscores rule, `.scn.ron` counting as one extension. Orphaned
 and missing assets are found by searching the **code root** for asset
 references; GDD-level completeness is `/content-audit`'s job. The report lists
 violations only, in one table per category, and names every section it could
@@ -281,7 +283,7 @@ Fixture defaults.
 ## Protocol Compliance
 
 - [ ] Reads the art bible or asset standards design docs before scanning (Phase 1)
-- [ ] Resolves the engine and its code root, then scans that engine's asset root with Glob (`assets/` subfolders on Godot, `Assets/` on Unity, `Content/` on Unreal); an unresolved engine stops the run as NOT ASSESSED
+- [ ] Resolves the engine and its code root, then scans that engine's asset root with Glob (`assets/` subfolders on Godot, `Assets/` on Unity, `Content/` on Unreal, `assets/` on Bevy); an unresolved engine stops the run as NOT ASSESSED
 - [ ] Report uses one table per category: Naming (File, Expected Pattern, Issue), Size (File, Budget, Actual, Overage), Format (File, Expected Format, Actual Format), Orphaned (File, Last Modified, Size, Recommendation), Missing (Reference Location, Expected Path)
 - [ ] A size or format it cannot measure is `NOT ASSESSED`, never an estimate, and every section not assessed is named with its reason
 - [ ] Each recommendation names the change for its violation (target resolution or compression, corrected name, target format)
@@ -298,6 +300,10 @@ Fixture defaults.
 - Orphan detection on Godot (an asset no code references) is not given its own
   case; it uses the same code search as Case 4 in the other direction. On Unity
   and Unreal it is NOT ASSESSED (Case 8).
+- On Bevy, Orphaned and Missing are both NOT ASSESSED (asset paths are plain
+  strings relative to `assets/`, built at run time or loaded by folder, and a
+  glTF names its own files), following Case 8's pattern; not separately
+  tested. `asset-scan.sh --engine bevy` was run on a scratch tree.
 - Unity follows Case 8's naming and orphan rules, with Format still checked on
   the source files under `Assets/`; it is not tested separately.
 - `/asset-audit` checks compliance against code references; `/content-audit`

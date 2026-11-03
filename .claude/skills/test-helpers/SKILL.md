@@ -30,6 +30,7 @@ the only place its test runner compiles them (`.claude/docs/directory-structure.
 | Godot | `tests/helpers/` |
 | Unity | `Assets/Tests/EditMode/Helpers/` — inside the `EditModeTests` assembly `/test-setup` creates. If PlayMode tests need the same helpers, ask before creating `Assets/Tests/Helpers/TestHelpers.asmdef` and referencing it from both test assemblies. |
 | Unreal | `Source/<Module>/Private/Tests/Helpers/` |
+| Bevy | `tests/helpers/`, as one module, `tests/helpers/mod.rs`. Cargo does not build it on its own (it is not `tests/*.rs` or `tests/<dir>/main.rs`); each test root that uses it declares it at the top of its `main.rs`: `#[path = "../helpers/mod.rs"] mod helpers;` — in `tests/unit/main.rs` and `tests/integration/main.rs` alike. Ask before adding that line to a `main.rs`. |
 
 `tests/helpers/` below means the helper root for the project's engine.
 
@@ -68,6 +69,13 @@ helper rather than guessing.
 test suite containing zero tests. Helpers are plain classes; only real test files
 extend the suite.
 
+**On Bevy (Rust),** `assert!` and `assert_eq!` *are* the harness's assertions:
+a failed one panics, the harness records that one test as `FAILED`, and the
+other tests still run (seen on Bevy 0.20.1). `debug_assert!` checks only when
+`debug_assertions` is on (its definition in Rust's `core`), so never use it in
+a helper. A helper module holds no `#[test]` function: one there runs again in
+every test root that declares the module.
+
 ---
 
 ## 1. Parse Arguments
@@ -96,12 +104,13 @@ If the engine is not configured in either source: "Engine not configured. Run `/
 ## 3. Load Existing Test Patterns
 
 Scan the engine's test root for patterns already in use (Godot `tests/`, Unity
-`Assets/Tests/`, Unreal `Source/<Module>/Private/Tests/`):
+`Assets/Tests/`, Unreal `Source/<Module>/Private/Tests/`, Bevy `tests/`):
 
 ```
 Glob pattern="tests/**/*_test.*"                  (Godot)
 Glob pattern="Assets/Tests/**/*Tests.cs"          (Unity)
 Glob pattern="Source/*/Private/Tests/**/*.cpp"    (Unreal)
+Glob pattern="tests/**/*.rs"                      (Bevy; also src/**/*.rs files holding #[cfg(test)])
 ```
 
 For a representative sample (up to 5 files), read the test files and extract:
@@ -377,6 +386,49 @@ namespace GameTestHelpers
 
 ---
 
+### Bevy (Rust's test harness)
+
+**Base helper** (`tests/helpers/mod.rs`; `<crate>` is the library's name,
+`GamePlugin` the game's plugin — use the project's own). Compiled on Bevy
+0.20.1 declared from both `tests/unit/main.rs` and `tests/integration/main.rs`,
+with `test_app` and `assert_in_range` run:
+
+```rust
+//! Shared test helpers. Each test root declares this module at the top of its
+//! main.rs: #[path = "../helpers/mod.rs"] mod helpers;
+#![allow(dead_code)] // each test root uses only some of the helpers
+
+use bevy::prelude::*;
+use <crate>::GamePlugin;
+
+/// A headless app with the game's plugin: MinimalPlugins, no window, no GPU.
+pub fn test_app() -> App {
+    let mut app = App::new();
+    app.add_plugins((MinimalPlugins, GamePlugin));
+    app
+}
+
+/// Every message of type M written since the app started, oldest first.
+pub fn messages<M: Message + Clone>(app: &App) -> Vec<M> {
+    let messages = app.world().resource::<Messages<M>>();
+    let mut cursor = messages.get_cursor();
+    cursor.read(messages).cloned().collect()
+}
+
+/// Assert a value lies in the inclusive range [min, max].
+/// Use for any formula output defined in GDD Formulas sections.
+pub fn assert_in_range(value: f32, min: f32, max: f32, label: &str) {
+    assert!((min..=max).contains(&value), "{label} ({value:.2}) is outside [{min:.2}, {max:.2}]");
+}
+```
+
+`test_app` follows `tests/how_to_test_apps.rs` in the `bevy` 0.20.1 crate and
+`messages` its `tests/how_to_test_systems.rs`. A system helper goes in the same
+folder as `tests/helpers/[system].rs`, declared inside `mod.rs` with
+`pub mod [system];`.
+
+---
+
 ## 5. Generate System-Specific Helpers
 
 For `[system-name]` or `all` modes, generate a helper per system:
@@ -451,7 +503,9 @@ After writing: Verdict: **COMPLETE** — helper files created.
 "Helper files created. To use them in a test:
 - Godot: `class_name` is auto-imported — no explicit import needed
 - Unity: Add `using` directive or reference the test assembly
-- Unreal: `#include \"Tests/Helpers/GameTestHelpers.h\"` (from inside the module)"
+- Unreal: `#include \"Tests/Helpers/GameTestHelpers.h\"` (from inside the module)
+- Bevy: `#[path = \"../helpers/mod.rs\"] mod helpers;` at the top of the test
+  root's `main.rs`, then `use crate::helpers::test_app;` in a system's test file"
 
 ---
 

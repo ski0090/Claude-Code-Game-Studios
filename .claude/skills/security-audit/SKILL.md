@@ -144,22 +144,24 @@ platform.online are false`).
 
 ### Engine pattern sets — read this before any Category below
 
-**Every pattern list in Categories 1–3 is written for Godot.** On a Unity or
-Unreal project they match nothing, and a zero-hit scan renders the report clean,
+**Every pattern list in Categories 1–3 is written for Godot.** On a Unity,
+Unreal or Bevy project they match nothing, and a zero-hit scan renders the report clean,
 "the most dangerous possible failure for a security audit". Use the table for
 `engine.name` resolved in Phase 1.
 
-| Category | Godot | Unity | Unreal |
-|---|---|---|---|
-| 1 — Save / serialization | the Godot list below | **NOT SOURCEABLE** | **NOT SOURCEABLE** |
-| 2 — Network / multiplayer | the Godot list below | `ServerRpc`, `ClientRpc`, `NetworkVariable`, `NetworkObject`, `NetworkManager`, `NetworkBehaviour`, `IsServer`, `IsOwner` | `UFUNCTION`, `Server`, `Client`, `NetMulticast`, `Replicated`, `DOREPLIFETIME`, `GetLifetimeReplicatedProps`, `HasAuthority` |
-| 3 — Input | the Godot list below | `InputSystem`, `PlayerInput`, `ReadValue`, `InputValue` | `EnhancedInput`, `UInputAction`, `InputMappingContext`, `BindAction`, `FInputActionValue` |
-| 4 — Data exposure | engine-agnostic — the list below applies to all three | | |
-| 5, 6 | judgement and manifests, not greps — no engine set needed | | |
+| Category | Godot | Unity | Unreal | Bevy |
+|---|---|---|---|---|
+| 1 — Save / serialization | the Godot list below | **NOT SOURCEABLE** | **NOT SOURCEABLE** | **NOT SOURCEABLE** — Bevy ships no save system (`docs/engine-reference/bevy/modules/serialization.md` names what it does ship) |
+| 2 — Network / multiplayer | the Godot list below | `ServerRpc`, `ClientRpc`, `NetworkVariable`, `NetworkObject`, `NetworkManager`, `NetworkBehaviour`, `IsServer`, `IsOwner` | `UFUNCTION`, `Server`, `Client`, `NetMulticast`, `Replicated`, `DOREPLIFETIME`, `GetLifetimeReplicatedProps`, `HasAuthority` | **NOT SOURCEABLE** — Bevy ships no multiplayer networking; a third-party crate's names come from that crate |
+| 3 — Input | the Godot list below | `InputSystem`, `PlayerInput`, `ReadValue`, `InputValue` | `EnhancedInput`, `UInputAction`, `InputMappingContext`, `BindAction`, `FInputActionValue` | `ButtonInput`, `KeyCode`, `KeyboardInput` (its `text` and `logical_key` carry typed text), `Gamepad`, `GamepadButton`, `GamepadAxis` |
+| 4 — Data exposure | engine-agnostic — the list below applies to all four | | | |
+| 5, 6 | judgement and manifests, not greps — no engine set needed | | | |
 
 The Unity and Unreal names above are **sourced from this repo's pinned
 references** (`docs/engine-reference/unity/modules/{networking,input}.md`,
 `docs/engine-reference/unreal/modules/{networking,input}.md`), not from recall.
+The Bevy names are sourced from the Bevy 0.20.1 crates' own source:
+`bevy_input` (`src/keyboard.rs`, `src/button_input.rs`, `src/gamepad.rs`).
 Verify them against the pin before use and add what the reference documents that
 this table omits — it is a floor, not a complete set.
 
@@ -233,7 +235,14 @@ Grep for: `get_input`, `Input.get_`, `input_map`, user-facing text fields — ch
 Grep case-insensitively in release-facing code for: `api[_-]?key`, `secret`,
 `password`, `token`, `private[_-]?key`, `sk_live`, `BEGIN PRIVATE KEY`, `DEBUG`,
 and the engine's print call (`print(` on Godot, `Debug.Log` on Unity, `UE_LOG`
-on Unreal).
+on Unreal, on Bevy `info!`, `warn!`, `error!`, `debug!`, `trace!` — `bevy_log`
+re-exports them from `tracing` — and Rust's own `println!`, `eprintln!`, `dbg!`).
+
+On Bevy, also grep for `RemotePlugin` and `RemoteHttpPlugin` (`bevy::remote`,
+the optional `bevy_remote` feature; `examples/remote/server.rs` in the `bevy`
+0.20.1 crate adds both): together they serve the running game's world over
+HTTP, to be read and changed. In a release build that is a debug endpoint left
+open, whether or not the game is multiplayer.
 
 ### Category 5: Cheat and Anti-Tamper Vectors
 - Are gameplay-critical values stored only in memory, not in easily-editable files?
@@ -249,6 +258,9 @@ Note: Client-side anti-cheat is largely unenforceable. Focus on server-side vali
 - Are plugin sources verified (official marketplace, reviewed repository)?
 
 Glob for: `addons/`, `plugins/`, `third_party/`, `vendor/` — list all external dependencies.
+On Bevy the dependencies are crates: list them from `Cargo.toml`'s
+`[dependencies]` (and `[dev-dependencies]`), with the versions `Cargo.lock`
+resolved.
 
 ---
 
@@ -422,9 +434,10 @@ If it is **NOT ASSESSED**:
 >
 > Name the missing input for each category: `engine.name`, the code root, the
 > multiplayer scope (`/settings platform.multiplayer=…`), or — for a category the
-> Phase 3 table marks NOT SOURCEABLE on this engine, the usual cause on Unity and
-> Unreal — a save/serialization module in `docs/engine-reference/<engine>/modules/`
-> (Phase 3), naming that category.
+> Phase 3 table marks NOT SOURCEABLE on this engine, the usual cause on Unity,
+> Unreal and Bevy — a save/serialization module in `docs/engine-reference/<engine>/modules/`
+> (Phase 3), naming that category (on Bevy, a networking one too, naming the
+> crate the game uses).
 
 If it is **CLEAR TO SHIP**:
 > "✅ No blocking security findings. Report written to `production/security/`. Include this path when running `/gate-check release`."

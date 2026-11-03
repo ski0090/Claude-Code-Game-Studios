@@ -38,7 +38,7 @@ paths:
         artifact:
           any_of:
             - glob: "project.yaml"
-              pattern: 'name:[[:space:]]*"?(Godot|Unity|Unreal)'
+              pattern: 'name:[[:space:]]*"?(Godot|Unity|Unreal|Bevy)'
             - glob: ".claude/docs/technical-preferences.md"
               pattern: '\*\*Engine\*\*: [^[]'
         description: "Configure the engine and pin its version"
@@ -101,7 +101,7 @@ phases:
         artifact:
           any_of:
             - glob: "project.yaml"
-              pattern: 'name:[[:space:]]*"?(Godot|Unity|Unreal)'
+              pattern: 'name:[[:space:]]*"?(Godot|Unity|Unreal|Bevy)'
             # technical-preferences.md writes "- **Engine**: Godot 4.7", so the
             # pattern must clear the bold markers. The [^[] guard rejects the
             # "[TO BE CONFIGURED]" placeholder.

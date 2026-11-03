@@ -3,7 +3,7 @@
 > **How to go from zero to a shipped game using the Agent Architecture.**
 >
 > This guide walks you through every phase of game development using the
-> 49-agent system, 74 slash commands, and 15 automated hooks. It assumes you
+> 50-agent system, 74 slash commands, and 15 automated hooks. It assumes you
 > have Claude Code installed and are working from the project root.
 >
 > The pipeline has 7 phases. At `rigor: standard` and `full`, each phase has
@@ -104,7 +104,7 @@ OPTIONAL opportunities.
 Directories are created as needed. The system expects this layout:
 
 ```
-src/                  # Game source code (Godot; Unity: Assets/, Unreal: Source/<Module>/)
+src/                  # Game source code (Godot, Bevy; Unity: Assets/, Unreal: Source/<Module>/)
   core/               # Engine/framework code
   gameplay/           # Gameplay systems
   ai/                 # AI systems
@@ -276,7 +276,8 @@ Or with a specific engine:
 **Why this matters:** Once you set the engine, the system knows which
 engine-specialist agents to use. If you pick Godot, agents like
 `godot-specialist`, `godot-gdscript-specialist`, and `godot-shader-specialist`
-become your go-to experts.
+become your go-to experts. On Bevy, one agent, `bevy-specialist`, covers code,
+shaders, UI and scenes.
 
 ### Step 1.4: Decompose Your Concept Into Systems
 
@@ -1385,7 +1386,8 @@ Tier 3 (Specialists):  gameplay-programmer, engine-programmer,
                        unity-shader-specialist, unity-addressables-specialist,
                        unity-ui-specialist, unreal-specialist,
                        ue-blueprint-specialist, ue-gas-specialist,
-                       ue-replication-specialist, ue-umg-specialist
+                       ue-replication-specialist, ue-umg-specialist,
+                       bevy-specialist
 ```
 
 **Coordination rules:**
@@ -1412,7 +1414,7 @@ The system has 15 hooks that run automatically:
 | `validate-read.sh` | Before a file read | Refuses a whole-file read of a design doc over 40 KB and answers with its headings |
 | `validate-write.sh` | Before a file write | Warns when a write would break a rule the skills state (never blocks) |
 | `validate-registry.sh` | Before an entity or TR-ID registry write | Warns when an entry would be deleted or renumbered, or a status is not in the header's list |
-| `validate-assets.sh` | After a file write | Checks data-file JSON, and asset naming in Godot's `assets/` |
+| `validate-assets.sh` | After a file write | Checks data-file JSON, and asset naming in Godot's and Bevy's `assets/` |
 | `validate-skill-change.sh` | Skill file written | Advises running `/skill-test` after `.claude/skills/` changes |
 | `log-agent.sh` | Agent start | Logs agent invocations for audit trail |
 | `log-agent-stop.sh` | Agent stop | Completes agent audit trail (start + stop) |
@@ -1565,6 +1567,7 @@ Reads existing code and generates GDD-format design documentation from it.
 | Unreal Blueprints | `ue-blueprint-specialist` | 3 |
 | Unreal replication | `ue-replication-specialist` | 3 |
 | Unreal UMG/CommonUI | `ue-umg-specialist` | 3 |
+| Bevy-specific help | `bevy-specialist` | 3 |
 
 ### Agent Hierarchy
 

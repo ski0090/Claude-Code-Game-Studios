@@ -24,6 +24,12 @@ paths:
   > `System.Text.Json` `JsonNamingPolicy`). Do **not** switch the file to camelCase
   > to avoid the DTO: keys are the cross-engine contract. Write the DTO and
   > document it as a wire-format boundary — that is the intended shape.
+  >
+  > **Bevy needs no mapping layer:** Rust fields are `snake_case`
+  > (`naming.variables`), so `#[derive(Deserialize)]` binds the keys directly.
+  > Bevy 0.20 ships no JSON asset loader; read data files through a crate
+  > (`bevy_common_assets`, `docs/engine-reference/bevy/PLUGINS.md`) or your own
+  > `AssetLoader`.
 - No orphaned data entries — every entry must be referenced by code or another data file
 - Version data files when making breaking schema changes
 - Include sensible defaults for all optional fields

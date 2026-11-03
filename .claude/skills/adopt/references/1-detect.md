@@ -50,7 +50,10 @@ If the project appears fresh (no artifacts at all), use `AskUserQuestion`:
    `## Detailed Design`; an ADR `## Status` with `## Decision`; a story
    `## Acceptance Criteria` with a `Status` line; a concept doc
    `## Elevator Pitch` or `## Game Pillars`; a brief `## Core loop` with
-   `## MVP`.
+   `## MVP`. Those are the English names: when none match, Grep `^## ` in
+   the files instead and classify each by what its headings mean in the
+   language they are written in (`## 결정` is a decision), naming the headings
+   that decided it, so the user can correct a guess.
 3. Show what was found, grouped by type, each with the place every skill reads
    it from: GDD → `design/gdd/[name].md`; ADR →
    `docs/architecture/adr-NNNN-[name].md`; story →

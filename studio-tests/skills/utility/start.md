@@ -125,7 +125,7 @@ Fixture defaults.
 **Fixture:**
 - `project.yaml` has `engine.name: Unity`, `modes.rigor: standard` and
   `modes.automation: collaborative`
-- C# scripts exist under `Assets/Scripts/`; `design/gdd/` holds 3 system GDDs;
+- 6 C# scripts exist under `Assets/Scripts/`; `design/gdd/` holds 3 system GDDs;
   no `design/gdd/game-concept.md`, no `docs/architecture/`
 - The user picks `D) Existing work` and `Save them`
 
@@ -205,7 +205,7 @@ Fixture defaults.
 
 **Fixture:**
 - `project.yaml` has `engine.name: Godot` and no `modes` block
-- `src/` holds GDScript files; `design/gdd/` holds 4 system GDDs; no
+- `src/` holds 5 GDScript files; `design/gdd/` holds 4 system GDDs; no
   `docs/architecture/`
 - The user picks `D) Existing work` and says "a commercial game for Steam with
   one clear core loop", then picks `Save them`, then `Collaborative`
@@ -271,7 +271,8 @@ Fixture defaults.
 **Expected behavior:**
 1. Phase 1 finds the engine set but no concept or brief, so the A–D question is asked
 2. Phase 3 D names `/project-stage-detect` as the immediate step
-3. The card shows `Systems Design` and rigor `minimal` as already set; Phase 5 asks nothing
+3. The card shows the stage as not set (14 source files: `/project-stage-detect` sets it)
+   and rigor `minimal` as already set; Phase 5 asks nothing
 4. Phase 6 prints the existing-work path at `minimal`: `/project-stage-detect`,
    `/adopt`, then the brief's source, with no GDD, ADR or registry retrofit
 5. With no brief and 10 or more source files, the brief's source is
@@ -281,7 +282,8 @@ Fixture defaults.
 - [ ] The minimal path lists `/project-stage-detect` and `/adopt`, and no `/design-system retrofit`, `/architecture-decision retrofit` or `/architecture-review`
 - [ ] With no `design/game-brief.md`, the path names `/reverse-document design src/` as the brief's source, with the code root filled in
 - [ ] `/brainstorm` is not named as the brief's source
-- [ ] Variant — `src/` holds only 4 source files: the brief's source is `/brainstorm`, and `/reverse-document` is not named
+- [ ] With 14 source files `set-stage.sh` does not run after `Save them`: no `project.stage`, no `production/stage.txt`, although 2 GDDs would read as `Systems Design`
+- [ ] Variant — `src/` holds only 4 source files: the brief's source is `/brainstorm`, `/reverse-document` is not named, and the stage `Systems Design` is written
 - [ ] Variant — `design/game-brief.md` exists: this is the returning-user skip
 
 ---

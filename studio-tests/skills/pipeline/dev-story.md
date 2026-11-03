@@ -14,7 +14,8 @@ stamps with). It checks the story's `Manifest Version` and its dependencies, ask
 to mark the story `In Progress`, and routes implementation to a programmer agent
 plus the project's engine specialist. It does not write source code itself, and
 every file it does write — story fields, `sprint-status.yaml`, a dependency's
-`Status`, a Config/Data file, Unity's `ScreenshotOnArg.cs` — follows an ask that
+`Status`, a Config/Data file, Unity's `ScreenshotOnArg.cs`, Bevy's
+`src/screenshot_on_arg.rs` — follows an ask that
 names it; only the session-state checkpoint is written without one.
 
 After the agent returns it verifies the agent finished, runs the engine parse
@@ -484,7 +485,10 @@ The `full` column of the file-check table has its own STOP rule, so the
 
 - The code root is covered for Godot (`src/`) and Unity (`Assets/`, Case 6) and for
   an unresolved engine (Case 7). Unreal (`Source/<Module>/<System>/`, with the
-  editor-target build as the parse check) is not given a fixture.
+  editor-target build as the parse check) is not given a fixture. Nor is Bevy
+  (`src/`, with `commands.smoke`, `cargo check --all-targets`, as the parse
+  check, failing on `error[E…]` lines; capture through
+  `src/screenshot_on_arg.rs`, asked for like Unity's `ScreenshotOnArg.cs`).
 - The INCOMPLETE path is Case 9; `parse NOT VERIFIED` when the engine binary is
   unavailable is not given a fixture.
 - The Manifest Version mismatch prompt (`[A]` update / `[B]` keep old rules, which

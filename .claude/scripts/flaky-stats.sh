@@ -18,7 +18,8 @@
 #               reports/ and Saved/Logs/ named *.xml, *.log or *.txt, sorted by
 #               path: pass the files yourself when their names do not sort in
 #               run order
-#   --format F  auto (default: found per file), junit, nunit, unreal or text
+#   --format F  auto (default: found per file), junit, nunit, unreal, libtest
+#               or text
 #   --runs      also print one RUN row per file
 #   --all       also list tests with no fail and no skip (default: only tests
 #               with at least one fail or skip are listed; the rest are counted)
@@ -37,6 +38,11 @@
 #           a fail, any other word a skip and listed as `unrecognised`; id is
 #           Path={...}, else Name={...}; a result with neither is counted as
 #           no_id and kept out of the tests
+#   libtest Rust's test harness as `cargo test` prints it (Bevy), saved from its
+#           output: each `test <id> ... ok | FAILED | ignored` line (ignored may
+#           carry `, <reason>`), ANSI colour codes removed; ok is a pass, FAILED
+#           a fail, ignored a skip. The id is the test's path as printed, so the
+#           same name in two test binaries is one test here
 #   text    a line with PASSED or FAILED as a whole word (Godot), or Test passed
 #           or Test failed (Unity): the id is the line without the marker, a
 #           leading ISO timestamp, ANSI colour codes, timing words like 12ms or
@@ -109,8 +115,8 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$FORMAT" in
-  auto|junit|nunit|unreal|text) ;;
-  *) echo "flaky-stats: --format takes auto, junit, nunit, unreal or text, got $FORMAT" >&2; exit 2 ;;
+  auto|junit|nunit|unreal|libtest|text) ;;
+  *) echo "flaky-stats: --format takes auto, junit, nunit, unreal, libtest or text, got $FORMAT" >&2; exit 2 ;;
 esac
 
 if [ -n "$ROOT_ARG" ]; then
@@ -162,16 +168,22 @@ printf '%s\n' "$FILES" | FORMAT="$FORMAT" SHOWRUNS="$SHOWRUNS" ALL="$ALL" awk '
     }
   }
   # The format of one file: NUnit if any <test-case, else JUnit if any
-  # <testcase, else Unreal if any "Test Completed. Result={", else text.
-  function detect(f,    l, nu, ju, un) {
-    nu = 0; ju = 0; un = 0
+  # <testcase, else Unreal if any "Test Completed. Result={", else libtest if
+  # any "test result: ok." or "test result: FAILED." line or any
+  # "test <id> ... ok|FAILED|ignored" line (a run cut off before its summary;
+  # before text, which would read those lines as tests named "test <id> ..."),
+  # else text.
+  function detect(f,    l, nu, ju, un, lt) {
+    nu = 0; ju = 0; un = 0; lt = 0
     while ((getline l < f) > 0) {
       if (index(l, "<test-case") > 0) nu = 1
       else if (index(l, "<testcase") > 0) ju = 1
       if (index(l, "Test Completed. Result={") > 0) un = 1
+      gsub(/\033\[[0-9;]*m/, "", l)
+      if (l ~ /^test result: (ok|FAILED)\./ || l ~ /^test .* \.\.\. (ok|FAILED|ignored)/) lt = 1
     }
     close(f)
-    return nu ? "nunit" : (ju ? "junit" : (un ? "unreal" : "text"))
+    return nu ? "nunit" : (ju ? "junit" : (un ? "unreal" : (lt ? "libtest" : "text")))
   }
   function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
   # XML entities in an id; &amp; last so &amp;lt; stays &lt;.
@@ -293,6 +305,16 @@ printf '%s\n' "$FILES" | FORMAT="$FORMAT" SHOWRUNS="$SHOWRUNS" ALL="$ALL" awk '
     else { code = "S"; unrec("unreal", w) }
     record(id, code)
   }
+  # `test <id> ... <word>[, <reason>]`: the first " ... <word>" that runs to
+  # the end of the line ends the id.
+  function libtest_line(s,    r, w) {
+    gsub(/\033\[[0-9;]*m/, "", s)
+    if (substr(s, 1, 5) != "test ") return
+    r = substr(s, 6)
+    if (!match(r, / \.\.\. (ok|FAILED|ignored)(, .*)?$/)) return
+    w = substr(r, RSTART + 5); sub(/,.*$/, "", w)
+    record(trim(substr(r, 1, RSTART - 1)), (w == "ok") ? "P" : ((w == "FAILED") ? "F" : "S"))
+  }
   function text_line(s,    hp, hf, tpz, tfl, code, marker, p, t, n, a, i, out) {
     gsub(/\033\[[0-9;]*m/, "", s)
     hp = match(s, /(^|[^A-Za-z0-9_])PASSED([^A-Za-z0-9_]|$)/) > 0
@@ -357,6 +379,7 @@ printf '%s\n' "$FILES" | FORMAT="$FORMAT" SHOWRUNS="$SHOWRUNS" ALL="$ALL" awk '
     line = $0; sub(/\r$/, "", line)
     if (cf == "nunit" || cf == "junit") xml_line(line)
     else if (cf == "unreal") unreal_line(line)
+    else if (cf == "libtest") libtest_line(line)
     else text_line(line)
   }
   END {

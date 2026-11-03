@@ -1130,6 +1130,15 @@ agents:
     last_category_result: ""
     category: engine
 
+  # Engine Specialists — Bevy
+  - name: bevy-specialist
+    spec: studio-tests/agents/engine/bevy/bevy-specialist.md
+    last_spec: ""
+    last_spec_result: ""
+    last_category: ""
+    last_category_result: ""
+    category: engine
+
   # Operations
   - name: devops-engineer
     spec: studio-tests/agents/operations/devops-engineer.md

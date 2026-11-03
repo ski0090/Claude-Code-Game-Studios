@@ -77,7 +77,7 @@ fi
 # Check if source code exists.
 #
 # All three code roots, not just `src/`. Per .claude/docs/directory-structure.md
-# `src/` is the Godot row; Unity builds from `Assets/` and Unreal from
+# `src/` is the Godot and Bevy row; Unity builds from `Assets/` and Unreal from
 # `Source/`. Testing only `src/` meant a Unity project with a full codebase
 # could still be greeted with "NEW PROJECT ... Run: /start".
 #
@@ -163,7 +163,7 @@ fi
 # --- Resolve the engine-specific code root for checks 1, 3 and 4 ------------
 #
 # Checks 1, 3 and 4 were all hardcoded to `src/`, which .claude/docs/directory-
-# structure.md defines as the GODOT row of the code-root table -- Unity uses
+# structure.md defines as the Godot (and Bevy) row of the code-root table -- Unity uses
 # `Assets/`, Unreal `Source/`. On those two engines every directory test below
 # failed, the source-file count came back 0, and NONE of the three checks ran.
 # A project with 200 undocumented Unity systems produced the same empty output

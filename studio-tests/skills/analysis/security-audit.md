@@ -265,3 +265,9 @@ Fixture defaults.
 - An absent `engine.name` with a resolvable tree (every grep category NOT
   ASSESSED, with no fallback to the Godot lists) is not tested separately.
 - Unreal follows the same engine table as Case 5 and is not tested separately.
+- Bevy follows the same table and is not tested separately: Category 1 and, when
+  multiplayer is in scope, Category 2 are NOT SOURCEABLE (Bevy ships neither a
+  save system nor networking); Category 3 uses the `bevy_input` names; Category
+  4 adds `info!`/`warn!`/… and `println!` as the print call and flags
+  `RemotePlugin`/`RemoteHttpPlugin` in a release build; Category 6 lists crates
+  from `Cargo.toml` and `Cargo.lock`.

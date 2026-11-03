@@ -24,9 +24,15 @@ Before running anything, understand the environment:
    that `tests/` does. Check the engine's **test root** (from step 3; the table
    is in `.claude/docs/directory-structure.md` — Godot `tests/unit/` and
    `tests/integration/`, Unity `Assets/Tests/`, Unreal
-   `Source/*/Private/Tests/`) and `tests/smoke/` for actual test files. A
+   `Source/*/Private/Tests/`, Bevy `tests/unit/` and `tests/integration/`) and
+   `tests/smoke/` for actual test files. A
    **test file** is one the engine's test runner executes — a `*_test.gd` suite,
-   a C# test class, an Unreal automation test source. Markdown checklists do not
+   a C# test class, an Unreal automation test source, on Bevy a `.rs` file under
+   `tests/unit/` or `tests/integration/` that its folder's `main.rs` declares
+   with `mod <system>;` and that holds a `#[test]` function (or a `#[test]` in
+   `main.rs` itself). Cargo never compiles an undeclared file there — no error,
+   no tests — so it does not count; `/test-setup`'s two `main.rs` files hold
+   comments only and do not count either. Markdown checklists do not
    count: `/test-setup` always writes `tests/smoke/critical-paths.md`, and
    counting it would hide exactly the zero-test state this step exists to catch.
    If none are found **at `qa.level: minimal`**, tests are waived at this level:
@@ -65,6 +71,13 @@ Before running anything, understand the environment:
    (a `[TO BE CONFIGURED]` value means not configured). Store this for test
    command selection in Phase 2.
 
+   **Bevy has no editor:** its runner is `cargo`, the Rust toolchain on `PATH`
+   (`engine.path` is not used). Take the one `commands.test` names when its
+   file name says cargo, else `cargo` on `PATH`; if neither resolves, the test
+   runner is not available (Phase 2) —
+   `NOT ASSESSED — cargo not found (commands.test, PATH)`. The rest of this
+   step is for the three engines with an editor.
+
    Then find the **editor executable** — none of the three engines installs
    onto `PATH` by default on Windows or macOS, so a bare `godot` that does not
    resolve says nothing about whether the engine is installed. Take the first
@@ -90,7 +103,7 @@ Before running anything, understand the environment:
    which has no sprints, a QA plan is optional — say so rather than recommend one.)
 
 Report findings before proceeding: "Environment: [engine]. Editor: [the
-resolved executable / not found]. Test directory:
+resolved executable (Bevy: cargo) / not found]. Test directory:
 [found / not found]. CI configured: [yes / no]. QA plan: [path / not found]."
 
 ---

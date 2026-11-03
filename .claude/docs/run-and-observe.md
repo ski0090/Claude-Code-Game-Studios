@@ -53,6 +53,7 @@ engine has a native way.
 | Godot 4 | `godot --path . --windowed --resolution 1280x720 <scene>.tscn` | `--write-movie <path>.png --quit-after <N>` | beside the given path, `<name>00000000.png` … | `--headless` | **none** |
 | Unity 6 | built player `.exe -screen-width 1280 -screen-height 720 -screen-fullscreen 0 --scene <Name>` | `ScreenCapture.CaptureScreenshot(<abs path>)` from a bootstrap script | the absolute path you pass | `-batchmode`, `-nographics` | one MonoBehaviour |
 | Unreal 5 | `MSYS_NO_PATHCONV=1 "<UE root>/Engine/Binaries/Win64/UnrealEditor.exe" "$(pwd -W 2>/dev/null || pwd)/<Game>.uproject" <MapURL> -game -windowed -ResX=1280 -ResY=720` | `HighResShot 1280x720 filename=<abs path>` console command | the path you pass (else `Saved/Screenshots/WindowsEditor/`) | `-nullrhi`, `-unattended` alone | one actor or `-ExecCmds` |
+| Bevy 0.20 | `cargo run -- --screenshot <abs path>` (the default window is 1280x720 physical pixels) | `Screenshot::primary_window()` + `save_to_disk(<abs path>)` from a plugin | the absolute path you pass | `MinimalPlugins` (no window, no renderer) | one plugin, two lines to register it |
 
 ### Godot 4 — zero scaffold
 
@@ -176,6 +177,79 @@ no delay, so let `timeout` end the launch (exit 124 is expected) and check the
 file exists; a dev actor can instead wait a second, then `quit`. The Blueprint node `Take High Res Screenshot` is editor-only and
 does not work in a `-game` launch.
 
+### Bevy 0.20 — one plugin
+
+```
+cargo run -- --screenshot "$(pwd -W 2>/dev/null || pwd)/production/qa/evidence/shop-panel/01-shop-open.png" --frames 60
+```
+
+Everything after `--` reaches the game, not Cargo. `--screenshot` and `--frames`
+are **yours**, read by the plugin below. The template does not ship it: the
+first time a Bevy story needs a screenshot, `/dev-story` asks to write it,
+verbatim, to `src/screenshot_on_arg.rs`, and to add two lines: `pub mod
+screenshot_on_arg;` in `src/lib.rs`, and
+`.add_plugins(<crate>::screenshot_on_arg::ScreenshotOnArgPlugin)` beside
+`DefaultPlugins` in `src/main.rs`. Unlike Unity's script, a Bevy plugin does not
+register itself. It does nothing unless the game was launched with
+`--screenshot`:
+
+```rust
+//! `cargo run -- --screenshot <abs path> [--frames N]` saves one frame and exits.
+use bevy::prelude::*;
+use bevy::render::view::screenshot::{save_to_disk, Screenshot, ScreenshotCaptured};
+
+pub struct ScreenshotOnArgPlugin;
+
+#[derive(Resource)]
+struct Pending {
+    path: String,
+    frames: u32,
+}
+
+impl Plugin for ScreenshotOnArgPlugin {
+    fn build(&self, app: &mut App) {
+        let args: Vec<String> = std::env::args().collect();
+        let arg = |name: &str| args.iter().position(|a| a == name).and_then(|i| args.get(i + 1));
+        let Some(path) = arg("--screenshot") else { return };
+        let frames = arg("--frames").and_then(|n| n.parse().ok()).unwrap_or(60);
+        app.insert_resource(Pending { path: path.clone(), frames })
+            .add_systems(Update, capture);
+    }
+}
+
+fn capture(mut commands: Commands, mut pending: ResMut<Pending>) {
+    if pending.frames == 0 {
+        return;
+    }
+    pending.frames -= 1;
+    if pending.frames == 0 {
+        commands
+            .spawn(Screenshot::primary_window())
+            .observe(save_to_disk(pending.path.clone()))
+            .observe(|_: On<ScreenshotCaptured>, mut exit: MessageWriter<AppExit>| {
+                exit.write(AppExit::Success);
+            });
+    }
+}
+```
+
+The capture is asynchronous: the image arrives a frame or more after the
+screenshot entity spawns, both observers run when it does, and the game exits
+only after the file is written. The log says `Screenshot saved to <path>`. Pass
+an **absolute** path: `cargo run` keeps your shell's directory as the game's
+working directory. The window opens at Bevy's default 1280x720 physical pixels,
+which is step 1's resolution; a project that sets its own `Window` resolution
+captures at that size instead.
+
+**An all-black image is a cold start, not a result.** Bevy's default clear colour
+is dark grey, so pure black means nothing rendered. The first launch after a
+fresh build captured all black at 60 frames; the next five launches, at 60 to
+300 frames, captured the scene. Launch again, or raise `--frames`, and never
+report a black capture as `OBSERVED`.
+
+The plugin does not choose a scene or state. Reach the story's surface through
+the game's own launch argument (see "Reaching the state").
+
 ### Any engine — OS capture fallback
 
 On Windows, PowerShell with `System.Drawing` can `CopyFromScreen` into a bitmap
@@ -223,20 +297,26 @@ Say which half the screenshot covered.
 A screenshot of the title screen verifies nothing about depth 2. Either launch
 the scene/map directly (Godot scene arg, Unreal map URL, Unity `--scene`) or
 give the bootstrap a debug argument that sets state (`--gold=500 --depth=2`).
+Bevy has no engine-level scene argument: the game reads its own (for example
+`--state shop` choosing the initial `States` value, or a `.scn.ron` path it
+loads), passed after `--` beside `--screenshot`.
 Write stories so their surface is reachable one of those ways; a story that is
 not is a story that will be marked `NOT VERIFIED` every time.
 
 ## Finding the engine
 
-None of the three engines installs onto `PATH` on Windows. `engine.path` in
+None of Godot, Unity or Unreal installs onto `PATH` on Windows. `engine.path` in
 `project.yaml` is where the editor lives; resolve it before concluding "no
-engine on this machine". Absence of a path is not absence of an engine.
+engine on this machine". Absence of a path is not absence of an engine. Bevy is
+the exception: it is a crate the project's `Cargo.toml` pulls in, so the only
+binary needed is `cargo` (rustup puts it on `PATH`), and `engine.path` is unused.
 
 ---
 
 *Commands above were run on Windows with Godot 4.6.1 (gdUnit4 6.1.3) and the
 Godot ones again on 4.7.2 (gdUnit4 6.2.2), Unity
 6000.3.23f1 and Unreal Engine 5.7; the Unreal Linux and macOS notes come from
-Epic's documentation. `docs/engine-reference/<engine>/` is
+Epic's documentation. The Bevy plugin and launch line were run on Windows with
+Bevy 0.20.1 (debug build, Vulkan). `docs/engine-reference/<engine>/` is
 the project's pinned authority; check it before trusting a version-qualified
 claim here.*

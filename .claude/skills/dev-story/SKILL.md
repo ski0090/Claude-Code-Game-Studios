@@ -4,7 +4,7 @@ description: "Implements one story in code with tests, following its ADRs. Use w
 argument-hint: "[story-path]"
 user-invocable: true
 disable-model-invocation: true
-allowed-tools: Read, Glob, Grep, Write, Edit, Agent, AskUserQuestion, Bash(bash "*/.claude/skills/dev-story/../../hooks/yaml-helper.sh" resolve_config *), Bash(bash .claude/scripts/story-facts.sh *), Bash(bash .claude/scripts/adr-status.sh *), Bash(bash .claude/scripts/md-section.sh *), Bash(bash .claude/scripts/session-state.sh *), Bash(bash .claude/scripts/review-receipts.sh hash *), Bash(godot *), Bash(mkdir -p production/qa/evidence/*)
+allowed-tools: Read, Glob, Grep, Write, Edit, Agent, AskUserQuestion, Bash(bash "*/.claude/skills/dev-story/../../hooks/yaml-helper.sh" resolve_config *), Bash(bash .claude/scripts/story-facts.sh *), Bash(bash .claude/scripts/adr-status.sh *), Bash(bash .claude/scripts/md-section.sh *), Bash(bash .claude/scripts/session-state.sh *), Bash(bash .claude/scripts/review-receipts.sh hash *), Bash(godot *), Bash(cargo check --all-targets*), Bash(cargo run *), Bash(mkdir -p production/qa/evidence/*)
 model: sonnet
 ---
 
@@ -228,8 +228,8 @@ command, the exit code and any error lines:
   `commands.test` names when its file name says godot (a wrapper such as `bash
   run-tests.sh` is not the editor), else `engine.path`, else `godot`. Never search the disk for
   one: when none of the three runs, the check is not verified.
-- **Unity, Unreal:** read `references/engine-checks.md`.
-- **No engine executable:** `parse NOT VERIFIED — engine binary not available`.
+- **Unity, Unreal, Bevy:** read `references/engine-checks.md`.
+- **No engine executable** (on Bevy, no `cargo`): `parse NOT VERIFIED — engine binary not available`.
   Never infer from reading the code that it parses.
 
 **Run it and look** (`.claude/docs/run-and-observe.md`). For every story a player
@@ -251,9 +251,10 @@ minimal`. Report exactly one line, plain text starting `Run result:` (no bold:
 Only the feel half of a Visual/Feel criterion (timing, weight) is DEFERRED to
 `/team-qa`: a still cannot show it.
 
-This skill pre-approves `godot` on PATH. An engine run through `engine.path` or
-the executable `commands.test` names asks first: the user approves it once, or
-adds `Bash(<that executable> *)` to `.claude/settings.local.json`.
+This skill pre-approves `godot` on PATH, and on Bevy `cargo check --all-targets`
+and `cargo run`. An engine run through `engine.path` or the executable
+`commands.test` names asks first: the user approves it once, or adds
+`Bash(<that executable> *)` to `.claude/settings.local.json`.
 
 ## Phase 7: Summary, files, checkpoint
 

@@ -751,7 +751,7 @@ fi
 # --- resolve the code root before either scan below ------------------------
 #
 # Both scans used to be hardcoded to `^src/gameplay/` and `^src/`. Per
-# .claude/docs/directory-structure.md, `src/` is the GODOT row of the code-root
+# .claude/docs/directory-structure.md, `src/` is the Godot and Bevy row of the code-root
 # table -- Unity compiles only `Assets/`, Unreal builds only from `Source/`. So
 # on two of the three supported engines both greps matched nothing on every
 # commit, both checks silently did not run, and the hook exited 0. A scan that

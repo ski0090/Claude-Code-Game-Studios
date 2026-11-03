@@ -15,7 +15,7 @@
 ### First: does a reference set already exist for this engine?
 
 **Check before doing anything else.** The template ships
-`docs/engine-reference/godot/`, `unity/` and `unreal/` **already populated**, so
+`docs/engine-reference/godot/`, `unity/`, `unreal/` and `bevy/` **already populated**, so
 "the directory exists and pins a version" is the state of *every* fresh project,
 not an edge case. Both branches below say "create", and following either one
 literally on a pre-populated directory either overwrites curated content or
@@ -99,6 +99,12 @@ Create the full reference doc set by searching the web:
    - `"[engine] [version] breaking changes"`
    - `"[engine] [version] changelog"`
    - `"[engine] [version] deprecated API"`
+   - Bevy needs no search for the guides: bevy.org publishes one migration
+     guide per minor at `https://bevy.org/learn/migration-guides/<old>-to-<new>/`
+     with dots as dashes (`0-19-to-0-20`), indexed at
+     `https://bevy.org/learn/migration-guides/introduction/`. Fetch every guide
+     from the cutoff's minor to the pinned one — a minor skipped is a set of
+     breaking changes missing from the reference.
 
 2. **Fetch and extract** from official documentation:
    - Breaking changes between each version from the training cutoff to current

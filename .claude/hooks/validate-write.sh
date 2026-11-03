@@ -89,7 +89,7 @@ shopt -u nocasematch
 _vw_go=0
 case "$INPUT" in *'"agent_type"'*) _vw_go=1 ;; esac
 case "$_VW_P" in
-  *EPIC.md*|*project.godot*|*helpers*|*tech-debt-register*|*engine-reference*) _vw_go=1 ;;
+  *EPIC.md*|*project.godot*|*Cargo.toml*|*helpers*|*tech-debt-register*|*engine-reference*) _vw_go=1 ;;
   *project.yaml*|*project.local.yaml*|*review-mode.txt*|*prototypes*|*strings*) _vw_go=1 ;;
   *tests*|*.github*|*production*|*Assets*|*Source*) _vw_go=1 ;;
 esac

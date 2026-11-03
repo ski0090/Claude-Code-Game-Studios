@@ -22,6 +22,13 @@ paths:
     that filter in `commands.test` uses: the project name, or the distinct root
     `/setup-engine` chose when the project's name is also an engine area
     (`Audio`, `Core`, `Input`, …) — name tests under whichever it is
+  - **Bevy (Rust's test harness, `cargo test`):** file `tests/unit/[system].rs`
+    (or `tests/integration/[system].rs`), declared in that folder's `main.rs`
+    as `mod [system];` — Cargo never compiles an undeclared file, so its tests
+    silently never run — function `[scenario]_[expected]` in snake_case, marked
+    `#[test]`. A test of a private item goes in the source file's own
+    `#[cfg(test)] mod tests`; files under `tests/` see only the library
+    crate's `pub` items
 - Every test must have a clear arrange/act/assert structure
 - Unit tests must not depend on external state (filesystem, network, database)
 - Integration tests must clean up after themselves
@@ -107,6 +114,30 @@ bool FHealthTakeDamageTest::RunTest(const FString& Parameters)
 }
 
 #endif
+```
+
+Bevy, headless with `MinimalPlugins` (`tests/unit/health.rs`, declared in
+`tests/unit/main.rs` as `mod health;`; `<crate>` is the library's name; this
+pattern was run on Bevy 0.20.1):
+
+```rust
+use bevy::prelude::*;
+use <crate>::{Damage, GamePlugin, Health};
+
+#[test]
+fn take_damage_reduces_health() {
+    // Arrange — no window, no GPU
+    let mut app = App::new();
+    app.add_plugins((MinimalPlugins, GamePlugin));
+    let target = app.world_mut().spawn(Health(100)).id();
+
+    // Act — write the input, run one frame
+    app.world_mut().write_message(Damage(25));
+    app.update();
+
+    // Assert
+    assert_eq!(app.world().get::<Health>(target).unwrap().0, 75);
+}
 ```
 
 **Incorrect**:

@@ -158,11 +158,13 @@ if [ -z "$ENGINE" ] && [ -f "$LEGACY" ]; then
   [ -n "$ENGINE" ] && { ESRC="$LEGACY"; CSRC="$LEGACY"; }
 fi
 # The code root each engine's own toolchain builds from
-# (.claude/docs/directory-structure.md): Godot src/, Unity Assets/, Unreal Source/.
+# (.claude/docs/directory-structure.md): Godot src/, Unity Assets/, Unreal Source/,
+# Bevy src/.
 case "$(printf '%s' "$ENGINE" | tr '[:upper:]' '[:lower:]')" in
   godot) CODE_ROOT="src" ;;
   unity) CODE_ROOT="Assets" ;;
   unreal*) CODE_ROOT="Source" ;;
+  bevy) CODE_ROOT="src" ;;
 esac
 if [ -z "$CODE_ROOT" ]; then
   # No usable engine: believe the tree only when exactly one root is present.

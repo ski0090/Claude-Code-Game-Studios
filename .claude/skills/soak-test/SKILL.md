@@ -114,7 +114,9 @@ Engine-specific monitoring guidance.
 > counters, Unity's Memory Profiler and its fields, Unreal's `stat memory`. Mark
 > them so in the protocol: they are pointers for the tester to confirm in their
 > own editor at T+0, not verified paths. If no memory tool can be found, nothing
-> was measured, and the Verdict section's NOT ASSESSED applies.
+> was measured, and the Verdict section's NOT ASSESSED applies. The Bevy names
+> are not marked: they come from the `bevy_diagnostic` 0.20.1 source. A Bevy
+> build that does not log them has measured nothing either.
 
 **Godot 4:**
 - Open Debugger → Monitors tab; track `Memory → Static Memory` and
@@ -140,6 +142,21 @@ Engine-specific monitoring guidance.
   measured against this run's T+0. An absolute threshold such as "> 50MB"
   silently assumes both the unit *and* a project scale — 50MB is a rounding
   error for one game and a catastrophe for another
+
+**Bevy:** Bevy has no editor or profiler window; the numbers come from its
+diagnostics plugins, which the game must add (`DefaultPlugins` has only the
+`DiagnosticsPlugin` store). Sourced from the `bevy_diagnostic` 0.20.1 crate:
+- Add `SystemInformationDiagnosticsPlugin`, `EntityCountDiagnosticsPlugin`,
+  `FrameTimeDiagnosticsPlugin` and `LogDiagnosticsPlugin` (all in
+  `bevy::diagnostic`) to the build under test; `LogDiagnosticsPlugin` prints
+  every diagnostic to the console once a second by default. Adding them is a
+  code change: ask before making it, or have the tester confirm the build has them
+- Record: `process/mem_usage` (the logged unit is GiB), `entity_count`, `fps`.
+  `SystemInformationDiagnosticsPlugin` needs the `sysinfo_plugin` feature, on
+  in Bevy's default features, and does not work with `bevy/dynamic`
+- Alert threshold: `process/mem_usage` growth **> 20% from T+0** after the first
+  15 minutes, as for Godot; `entity_count` that keeps rising with no matching
+  gameplay is a leak whatever the memory number says
 
 ### Stability observation items (if focus = stability or all)
 
@@ -184,8 +201,11 @@ Before starting the soak:
   - **Godot**: Debugger → Monitors tab → Memory section visible
   - **Unity**: Memory Profiler window open
   - **Unreal**: `stat memory` ready in console
-  - Tool actually used, as named in this editor: [record it — the names above
-    are NOT SOURCEABLE from `docs/engine-reference/`; none found → NOT ASSESSED]
+  - **Bevy**: the build logs `process/mem_usage`, `entity_count` and `fps`
+    (diagnostics plugins added; console visible)
+  - Tool actually used, as named in this editor: [record it — the Godot, Unity
+    and Unreal names above are NOT SOURCEABLE from `docs/engine-reference/`;
+    none found → NOT ASSESSED]
 - [ ] Soak target confirmed: [session design intent from game concept]
 - [ ] Prior known issues to watch for: [from most recent playtest / qa-plan]
 

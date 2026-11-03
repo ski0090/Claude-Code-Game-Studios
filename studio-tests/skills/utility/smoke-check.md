@@ -11,7 +11,8 @@ then resolves the editor executable — the one `commands.test` names, else
 Phase 2 runs `commands.test` (or the per-engine default) under a timeout and
 reads the result by engine — gdUnit4 exit codes for Godot; on Unity, Play Mode
 tests under `Assets/Tests/PlayMode/` get a second run with their own results
-file. At `qa.level: minimal` with no game tests, the automated row is WAIVED
+file; on Bevy, `cargo test` (runner `cargo`, no editor) under `timeout 1800`,
+read by its lines because a failing test and a compile error both exit 101. At `qa.level: minimal` with no game tests, the automated row is WAIVED
 and Phase 2 runs a build check instead — `commands.smoke`, else
 `commands.build`, when set. Phase 3 scans test coverage against the QA plan or
 sprint stories; Phase 4 batch-verifies manual smoke checks with
@@ -429,6 +430,41 @@ Fixture defaults.
 
 ---
 
+### Case 13: Bevy — exit 101 is read by its lines, and all-ignored is not a pass
+
+**Fixture:**
+- `engine.name: Bevy`, `commands.test: cargo test`; `cargo` on `PATH`
+- `Cargo.toml` and `src/lib.rs` exist; `tests/unit/main.rs` declares
+  `mod combat;` and `tests/unit/combat.rs` holds two `#[test]` functions
+- Three runs of the same fixture:
+  - Run A — `cargo test` exits 101; the output has `error[E0308]: mismatched
+    types` and `error: could not compile …` lines and no `test result:` line
+  - Run B — exits 101; the output has `test combat::damage_lowers_health ...
+    FAILED` and `test result: FAILED. 1 passed; 1 failed; 0 ignored; …`
+  - Run C — exits 0; both tests carry `#[ignore = "flaky: timing"]`, and the
+    output's `test result:` lines add up to `0 passed; 0 failed; 2 ignored`
+
+**Input:** `/smoke-check` (once per run)
+
+**Expected behavior:**
+1. Phase 1 counts `tests/unit/combat.rs` as a test file (declared in `main.rs`)
+   and resolves the runner as `cargo`, with no editor executable asked for
+2. Phase 2 checks `Cargo.toml`, then runs `cargo test` under `timeout 1800`
+3. Run A: FAIL — the code did not compile, so no test ran; not reported as a
+   failing test
+4. Run B: FAIL — `combat::damage_lowers_health` is named as the failing test,
+   with counts summed from the `test result:` lines
+5. Run C: NOT ASSESSED — every test is ignored, nothing ran
+
+**Assertions:**
+- [ ] The run uses `timeout 1800`, not 900, after the `Cargo.toml` check
+- [ ] Run A is a FAIL reported as a compile error, not as a test failure
+- [ ] Run B is a FAIL that names the `... FAILED` test
+- [ ] Run C is NOT ASSESSED — never PASS
+- [ ] No run is read from the exit code alone
+
+---
+
 ## Protocol Compliance
 
 - [ ] Uses `AskUserQuestion` for all manual smoke check batches (Batch 1, Batch 2, Batch 3), and Batch 1 asks whether the build was launched this session; "not launched" yields NOT ASSESSED
@@ -456,9 +492,14 @@ Fixture defaults.
   confirms a result from their IDE or CI) is covered by the protocol compliance
   assertions above.
 - At `qa.level: minimal` a FAIL is advisory and never blocks hand-off; Case 2
-  pins `standard` to test the blocking path. Unity's `testcasecount="0"` and
-  Unreal's `No automation tests matched` (→ NOT ASSESSED) follow Case 6 Run A;
-  not separately fixture-tested.
+  pins `standard` to test the blocking path. Unity's `testcasecount="0"`,
+  Unreal's `No automation tests matched` and Bevy's every-`running 0 tests`
+  output (→ NOT ASSESSED) follow Case 6 Run A; not separately fixture-tested.
+- Bevy (Case 13): a file under `tests/unit/` that `tests/unit/main.rs` does not
+  declare is not a test file in Phase 1 (Cargo never compiles it); a missing
+  `Cargo.toml` (NOT ASSESSED) and `cargo` not on `PATH` (runner unavailable)
+  are asserted in the skill, not given cases here. The ladder Case 13 asserts
+  was run through `test-run.sh bevy` on Bevy 0.20.1, not through the skill.
 - The Linux and macOS Unreal commands (picked by `uname -s`) are not
   fixture-tested. On macOS, Unreal tests are NOT ASSESSED until `commands.test`
   is set — asserted in the skill, not given a case here.

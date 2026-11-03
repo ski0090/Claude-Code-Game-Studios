@@ -12,7 +12,10 @@ checkpoints for the duration and engine-specific memory guidance whose alert
 thresholds are relative to the session's own T+0 baseline, in units recorded as
 displayed. The engine tool and counter names it gives are not covered by
 `docs/engine-reference/`, so they are marked NOT SOURCEABLE — pointers the
-tester confirms at T+0, recording the tool actually used.
+tester confirms at T+0, recording the tool actually used. Bevy is the
+exception: its names (the diagnostics plugins, `process/mem_usage`,
+`entity_count`, `fps`) come from the `bevy_diagnostic` 0.20.1 source, and the
+plugins must be added to the build under test (`DefaultPlugins` does not add them).
 
 The protocol document carries a Verdict section with PASS / PASS WITH CONCERNS /
 NOT ASSESSED / FAIL for the tester to fill in after the session; a short soak
@@ -223,3 +226,6 @@ Fixture defaults.
   game concept; not separately tested.
 - Executing the protocol is outside this skill's scope — it generates the plan,
   a human runs it.
+- A Bevy soak (diagnostics plugins added to the build, `process/mem_usage`
+  growth > 20% from T+0, a rising `entity_count`) follows Case 1's pattern with
+  sourced names instead of NOT SOURCEABLE ones; not separately tested.

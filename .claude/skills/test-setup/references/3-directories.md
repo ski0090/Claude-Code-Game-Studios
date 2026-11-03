@@ -19,7 +19,7 @@ After approval, create the following files:
 # Test Infrastructure
 
 **Engine**: [engine name + version]
-**Test Framework**: [GdUnit4 | Unity Test Framework | UE Automation]
+**Test Framework**: [GdUnit4 | Unity Test Framework | UE Automation | Rust's built-in test harness, run by `cargo test`]
 **CI**: `.github/workflows/tests.yml`
 **Setup date**: [date]
 
@@ -36,6 +36,12 @@ tests/
 live under the engine's test root, `Assets/Tests/EditMode|PlayMode/[System]/`
 or `Source/<Module>/Private/Tests/[System]/`; `tests/` keeps this README and
 `smoke/`. Every `tests/unit/` path below means that test root.]
+
+[Bevy — the unit and integration lines become `unit/main.rs` and
+`integration/main.rs`, each declaring its system files (`mod <system>;` for
+`tests/unit/<system>.rs`), and in-file unit tests live beside the code in
+`src/` as `#[cfg(test)] mod tests`. A `tests/unit/[system]/` path below means
+the file `tests/unit/[system].rs`, and likewise for integration.]
 
 ```
 production/qa/
@@ -60,6 +66,9 @@ Names follow the engine's language (`.claude/rules/test-standards.md`):
   — `FCombatBaseAttackTest` → `<Project>.Combat.BaseAttack`
   [`<Project>` is the root the filter in `commands.test` uses — write it out:
   the project name, or the distinct root `/setup-engine` chose]
+- **Bevy**: file `tests/unit/[system].rs`, declared in `tests/unit/main.rs`;
+  function `[scenario]_[expected]` in snake_case, marked `#[test]`
+  — `combat.rs` → `base_attack_returns_expected_damage()`
 
 ## Story Type → Test Evidence
 
@@ -241,6 +250,71 @@ built or named `<Project>.…`.
 Test class naming: F[System][Scenario]Test — one class per test; a second
 test reusing a class name fails to link
 Test name: "<Project>.[System].[Scenario]"
+```
+
+#### Bevy (`Engine: Bevy`)
+
+**Do not write a runner.** Rust's built-in test harness runs with `cargo
+test`, the `commands.test` `/setup-engine` writes. Cargo builds `tests/*.rs`
+and `tests/<dir>/main.rs` as test targets and nothing else under `tests/`, so
+the test roots are `tests/unit/main.rs` and `tests/integration/main.rs`. A
+`tests/unit/<system>.rs` that `main.rs` does not declare with `mod <system>;`
+is never compiled: no error, and its tests never run (checked on Bevy 0.20.1: a
+panicking test in an undeclared file did not run, and the run passed).
+
+Create `tests/unit/main.rs` (and `tests/integration/main.rs`, with
+`integration` for `unit`) holding comments only — no test, so the run reports
+`running 0 tests` until a real one is declared, never a pass over a test that
+checks no game code:
+```rust
+//! The unit test root: Cargo builds tests/unit/main.rs as one test target.
+//! Declare each system's test file here, one line per file. A file under
+//! tests/unit/ with no `mod` line here is never compiled, and its tests
+//! never run (no error). Tests use the game's pub API from src/lib.rs.
+//!
+//! Example: `mod combat;` runs the #[test] functions in tests/unit/combat.rs.
+```
+
+Tests under `tests/` see only the library crate's `pub` items: the game lives
+in `src/lib.rs`, and `src/main.rs` only builds the `App`. If `src/lib.rs` is
+missing, say so in the summary — the first test file cannot reach the game.
+A test of a private item goes in its source file's own `#[cfg(test)] mod tests`.
+
+Note in the README: **Running Bevy tests**
+```
+cargo test
+```
+Exit **0** when every test passes. Exit **101** on a failing test **and** on a
+compile error: a `test result: FAILED` line is a failing test; an `error[E…]`
+or `error: could not compile` line with no `test result:` line means the code
+did not compile and no test ran. A run where every `running N tests` line says
+`running 0 tests` ran nothing — not a pass (the binary target and the doctests
+print `running 0 tests` even when other targets have tests). `cargo test` stops
+at the first test binary that fails; `cargo test --no-fail-fast` runs them all.
+
+Note in the README: **Writing a test** — headless, `MinimalPlugins` in place
+of `DefaultPlugins`, so no window or GPU: write the input, run one frame with
+`app.update()`, read `app.world()` (the pattern of `tests/how_to_test_apps.rs`
+and `tests/how_to_test_systems.rs` in the `bevy` 0.20.1 crate; run on 0.20.1):
+```rust
+// tests/unit/combat.rs, declared in tests/unit/main.rs as `mod combat;`
+use bevy::prelude::*;
+use <crate>::{Damage, GamePlugin, Health}; // <crate>: the library's name
+
+#[test]
+fn damage_lowers_health() {
+    // Arrange
+    let mut app = App::new();
+    app.add_plugins((MinimalPlugins, GamePlugin));
+    let target = app.world_mut().spawn(Health(10)).id();
+
+    // Act
+    app.world_mut().write_message(Damage(3));
+    app.update();
+
+    // Assert
+    assert_eq!(app.world().get::<Health>(target).unwrap().0, 7);
+}
 ```
 
 ---

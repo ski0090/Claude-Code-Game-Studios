@@ -211,6 +211,19 @@ case "$ENGINE_LC" in
       [ -n "$UMAJ" ] && [ -n "$UMIN" ] && PROBE="$UMAJ.$UMIN${UPAT:+.$UPAT} (Engine/Build/Build.version)"
     fi
     ;;
+  bevy)
+    # No binary: Bevy is a crate compiled into the game, and the version the
+    # build actually uses is the one Cargo.lock pins. Take the [[package]] whose
+    # name is exactly "bevy" -- never bevy_app or another bevy_* crate, which
+    # carry their own version lines -- and read its version line.
+    if [ -f Cargo.lock ]; then
+      BEVY_LOCKED="$(tr -d '\r' < Cargo.lock | awk '
+        /^\[\[package\]\]/        { inb = 0; next }
+        /^name = "bevy"$/          { inb = 1; next }
+        inb && /^version = "/      { sub(/^version = "/, ""); sub(/".*$/, ""); print; exit }')"
+      [ -n "$BEVY_LOCKED" ] && PROBE="$BEVY_LOCKED (Cargo.lock)"
+    fi
+    ;;
 esac
 
 if [ -z "$PROBE" ]; then
@@ -218,6 +231,10 @@ if [ -z "$PROBE" ]; then
     skipped "declared version vs installed binary — no Unity editor at the path in commands.test or in the Hub folder for engine.version. A probe that could not run has not established absence."
   elif [ "$ENGINE_LC" = "godot" ]; then
     skipped "declared version vs installed binary — no Godot executable found (commands.test, engine.path, PATH). A probe that could not run has not established absence."
+  elif [ "$ENGINE_LC" = "bevy" ] && [ ! -f Cargo.lock ]; then
+    skipped "declared version vs locked Bevy — no Cargo.lock at the repo root. Cargo writes it on the first build (cargo check), so before one this is the normal state, not a mismatch."
+  elif [ "$ENGINE_LC" = "bevy" ]; then
+    skipped "declared version vs locked Bevy — Cargo.lock locks no package named exactly 'bevy' (a project on bevy_* sub-crates alone has none to compare)."
   elif [ "$ENGINE_LC" = "unreal" ]; then
     skipped "declared version vs installed engine — no readable Engine/Build/Build.version under engine.path, the editor in commands.test, the launcher folder for the .uproject's EngineAssociation, or UnrealEditor-Cmd on PATH. A probe that could not run has not established absence."
   else
@@ -231,13 +248,17 @@ else
   GOT="$(vmm "$PROBE")"
   if [ -n "$WANT" ] && [ "$WANT" = "$GOT" ]; then
     match "engine.version $VERSION matches the installed binary ($PROBE)"
+  elif [ "$ENGINE_LC" = "bevy" ]; then
+    differs "engine.version is '$VERSION' but Cargo.lock locks bevy $BEVY_LOCKED. The build compiles the locked version, so agents reading the $VERSION reference answer for a Bevy the game does not use."
   else
     differs "engine.version is '$VERSION' but the installed binary reports '$PROBE'. Build, test and smoke commands all target the declared version."
   fi
 fi
 
 # --- 4/5. Godot: declared rendering + physics vs the real project file --------
-if [ "$ENGINE_LC" != "godot" ]; then
+if [ "$ENGINE_LC" = "bevy" ]; then
+  skipped "rendering and physics — a Bevy project has no file that declares either: the opaque render method is chosen in Rust code (forward unless the code opts into deferred), and physics is whichever crate the project adds. Neither is parsed here."
+elif [ "$ENGINE_LC" != "godot" ]; then
   skipped "project-file checks — implemented for Godot only; $ENGINE has no single equivalent file this script can read"
 elif [ ! -f project.godot ]; then
   skipped "project-file checks — no project.godot in this repo"
@@ -293,6 +314,17 @@ else
       match "commands.build names an export preset and export_presets.cfg exists"
     else
       differs "commands.build is '$BUILD_CMD' but there is no export_presets.cfg. Godot cannot resolve the preset, so this command fails the first time CI or /smoke-check runs it."
+    fi
+  fi
+
+  # Bevy's commands are cargo commands, and cargo reads Cargo.toml from the
+  # working directory or a parent. With none at the root they build some other
+  # crate, or fail with "could not find Cargo.toml".
+  if printf '%s\n%s\n' "$BUILD_CMD" "$TEST_CMD" | grep -qE '(^|[[:space:]"/])cargo(\.exe)?"?([[:space:]]|$)'; then
+    if [ -f Cargo.toml ]; then
+      match "commands.build/test run cargo and Cargo.toml exists at the repo root"
+    else
+      differs "commands.build/test run cargo but there is no Cargo.toml at the repo root, so they cannot build this project as written."
     fi
   fi
 

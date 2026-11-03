@@ -222,7 +222,7 @@ writer, world-builder
 godot-shader-specialist, godot-gdextension-specialist, unity-specialist, unity-ui-specialist,
 unity-shader-specialist, unity-dots-specialist, unity-addressables-specialist,
 unreal-specialist, ue-blueprint-specialist, ue-gas-specialist, ue-umg-specialist,
-ue-replication-specialist
+ue-replication-specialist, bevy-specialist
 
 | Metric | PASS criteria |
 |---|---|

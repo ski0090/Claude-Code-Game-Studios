@@ -53,6 +53,16 @@ void UProximityComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 }
 ```
 
+Bevy:
+
+```rust
+// Local<Vec<_>> lives across runs of this system; clear() keeps its capacity
+fn collect_targets(mut cache: Local<Vec<Entity>>, enemies: Query<Entity, With<Enemy>>) {
+    cache.clear();
+    cache.extend(enemies.iter());
+}
+```
+
 **Incorrect** (allocating in hot path):
 
 ```gdscript

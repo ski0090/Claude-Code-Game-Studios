@@ -5,6 +5,7 @@ paths:
   - "**/*.unity"
   - "**/*.prefab"
   - "Assets/**/*.asset"
+  - "**/*.scn.ron"
 ---
 
 # Scene and Asset File Rules
@@ -39,3 +40,23 @@ When you edit the text by hand:
 - With no Editor reachable, keep every `fileID` and `guid` reference intact,
   never invent a GUID, never edit or delete a `.meta` file, and open the scene
   in the Editor afterwards to confirm it loads.
+
+## Bevy (`.scn.ron`)
+
+Bevy has no editor: a `.scn.ron` is RON that `DynamicWorld::serialize` wrote or
+a person typed, and the `WorldAssetLoader` in `bevy_world_serialization` (not
+`bevy_scene`, which is BSN since 0.19) loads it as a `DynamicWorld`. When you
+edit one:
+
+- Keep it valid RON. A syntax error fails the whole load.
+- Every type path must name a type the game registers for reflection
+  (`#[derive(Reflect)]` with `#[reflect(Component)]` or `#[reflect(Resource)]`).
+  An unknown path fails the load with "no registration found". Check the path
+  against the source: paths move between versions (0.20 moved `Tonemapping` to
+  `bevy_render::view`).
+- Entity ids in the file are local to it: loading maps each one to a new
+  entity. A component field that refers to another entity uses that entity's id
+  in the same file, and is remapped only when the component implements
+  `MapEntities` (`#[reflect(MapEntities)]`).
+- After a hand edit, load it: run the game, or a headless test that spawns it
+  with `DynamicWorldRoot`, and confirm it loads without errors.

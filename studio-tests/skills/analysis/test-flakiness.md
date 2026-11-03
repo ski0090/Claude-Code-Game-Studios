@@ -5,7 +5,8 @@
 `/test-flakiness` finds flaky tests from the results of multiple CI or local
 test runs. It takes a log path, `scan` (all available result files — JUnit XML
 from gdUnit4 in `reports/` or saved into `test-results/`, NUnit XML from Unity in
-`test-results/`, Unreal automation logs in `Saved/Logs/`), or `registry` (remediation guidance for tests already in the
+`test-results/`, Unreal automation logs in `Saved/Logs/`, saved `cargo test`
+logs from Bevy in `test-results/`), or `registry` (remediation guidance for tests already in the
 quarantine section of `tests/regression-suite.md`). With no result data it lists
 three ways to get some and stops to ask. It builds a per-test history across
 runs, classifies each test that both passed and failed by fail rate — >25% High
@@ -199,4 +200,8 @@ Fixture defaults.
   `Test Completed. Result={<status>}`), and its skip
   mechanism is NOT SOURCEABLE, so a quarantined Unreal test is logged and the
   user is asked how their CI excludes it. The same applies to gdUnit4 C# tests.
+- Bevy follows Case 1's flow from saved `cargo test` logs: each
+  `test <path> ... ok | FAILED | ignored` line is one result (ignored is not a
+  run), and its skip mechanism is `#[ignore = "flaky: [cause]"]`; not tested
+  separately here.
 - The Low tier (1–5%) needs 20 or more runs to reach and is not tested.

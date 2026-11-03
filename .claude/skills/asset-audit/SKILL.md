@@ -74,7 +74,7 @@ Asset Standards section sets budgets, formats and the naming convention.
 ## Phase 2: Scan Asset Directories
 
 Assets live under the engine's asset root: `assets/` on Godot, `Assets/` on
-Unity, `Content/` on Unreal. Resolve the engine and its code root per
+Unity, `Content/` on Unreal, `assets/` on Bevy. Resolve the engine and its code root per
 `.claude/docs/code-root-resolution.md`; that code root is the one Phase 3's
 orphan and missing-asset searches read. If it is unresolved, stop:
 `NOT ASSESSED — engine unresolved`, naming `/setup-engine`.
@@ -85,6 +85,8 @@ Scan the asset root using Glob:
   `assets/shaders/**/*`, `assets/data/**/*`
 - **Unity** — `Assets/**/*`, leaving out scripts (`*.cs`, `*.asmdef`) and `*.meta` files
 - **Unreal** — `Content/**/*.uasset` and `Content/**/*.umap`
+- **Bevy** — `assets/**/*`, leaving out `*.meta` files (Bevy keeps an asset's
+  load settings in `<asset file>.meta` beside it)
 
 The files matched are `Total assets scanned`. If there are none, the checks on
 scanned files — Naming, Size, Format, Orphaned — are
@@ -102,6 +104,9 @@ scanned files — Naming, Size, Format, Orphaned — are
 These are Godot's conventions. Unity and Unreal name assets in PascalCase, so on
 those engines check names only against a naming rule the art bible states; with
 none, Naming is `NOT ASSESSED — no naming rule for <engine>` (name `/art-bible`).
+On Bevy the lowercase-with-underscores rule applies, as on Godot (`naming.files`
+and `naming.scenes` are `snake_case` there), and a scene's `.scn.ron` counts as
+one extension: `main_menu.scn.ron` breaks nothing.
 
 **File standards:**
 - Textures: Power-of-two dimensions, correct format (PNG for UI, compressed for 3D), within size budget
@@ -122,6 +127,13 @@ Both searches need code: if the code root holds no source files, Orphaned and
 Missing are `NOT ASSESSED — no code to search`. On Unity and Unreal most asset
 references live in scenes, prefabs and other assets rather than code, so an
 asset no code names may still be in use: Orphaned is `NOT ASSESSED` there.
+On Bevy both are `NOT ASSESSED`: code names an asset by a plain path string
+relative to `assets/` (`asset_server.load("textures/hero.png")`, with a
+`#label` for a part of a file, or `load_folder` for a whole folder), which it
+can also build at run time, and a glTF file names its own buffers and images.
+With no marker such as Godot's `res://`, a search would report used assets as
+orphans and miss built paths (`bevy_asset` 0.20.1: `AssetServer::load`,
+`load_folder`, `AssetPath`).
 
 ---
 

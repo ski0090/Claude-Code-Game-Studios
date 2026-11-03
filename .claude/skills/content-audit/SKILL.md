@@ -169,9 +169,18 @@ a `data/` segment — for items, `Assets/**/items/**`, `Assets/**/Items/**` and
 and `.prefab`. Skipping this finds zero items, abilities, quests and dialogue
 on a Unity project and reports them NOT STARTED.
 
+**On Bevy, content lives under `assets/`** and the code root (`src/`) holds
+only Rust, so no glob below runs under `src/`. Levels are scene files,
+`assets/**/*.scn.ron` and `assets/**/*.scn` (the two extensions of Bevy
+0.20.1's scene loader). Data files are `.ron`, `.json` and `.yaml` (RON is the
+format Bevy writes its scenes in), under the same `assets/data/…` folders as
+below. Content a Bevy game defines in Rust code (a `const` table, a spawn list)
+is not found by any glob: when the code shows a content type is built that
+way, its Found is `NOT ASSESSED — defined in code`, never 0.
+
 **Levels / Areas / Maps:**
-- Glob `assets/**/*.tscn`, `assets/**/*.unity`, `assets/**/*.umap`
-- Glob the **code root** for scene files: `*.tscn` (Godot), `*.unity` (Unity); on Unreal, `Content/**/*.umap` instead (above). Resolve the root per `.claude/docs/code-root-resolution.md`. **If the code root is unresolved, report `NOT ASSESSED — code root unresolved` rather than zero hits.**
+- Glob `assets/**/*.tscn`, `assets/**/*.unity`, `assets/**/*.umap`, `assets/**/*.scn.ron`, `assets/**/*.scn`
+- Glob the **code root** for scene files: `*.tscn` (Godot), `*.unity` (Unity); on Unreal, `Content/**/*.umap` instead (above); on Bevy, none (above). Resolve the root per `.claude/docs/code-root-resolution.md`. **If the code root is unresolved, report `NOT ASSESSED — code root unresolved` rather than zero hits.**
 - Look for scene files in subdirectories named `levels/`, `areas/`, `maps/`,
   `worlds/`, `stages/`
 - Count unique files that appear to be level/scene definitions (not UI scenes)
@@ -234,7 +243,7 @@ Flag a system as `HIGH PRIORITY` in the report if:
 - Total content items found (sum of all Found column values)
 - Overall gap percentage: `(Specified - Found) / Specified * 100`
 
-A row whose Found is `NOT ASSESSED` (code root unresolved) has no Gap or
+A row whose Found is `NOT ASSESSED` (code root unresolved, or on Bevy defined in code) has no Gap or
 Status, is never `NOT STARTED`, and stays out of both totals; the summary names it.
 
 ---
@@ -320,5 +329,5 @@ Close with the verdict that matches the run:
 - Verdict: **NOT ASSESSED — NO DATA** — a required input was absent (see the note at
   the top), nothing in scope gives a count (no registry entry, and every GDD is
   "Unspecified" or "No auditable content counts"), or a Found count could not be taken
-  (`NOT ASSESSED — code root unresolved`); name which, and for missing counts
+  (`NOT ASSESSED — code root unresolved`, or `— defined in code` on Bevy); name which, and for missing counts
   name `/design-system`. Never print COMPLETE for a run that could not compute a gap.

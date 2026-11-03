@@ -37,7 +37,7 @@ mode) and Read those ranges with offset and limit:
 
 **Question 1 — Prior experience** (ask this first, always, via `AskUserQuestion`):
 - Prompt: "Have you worked in any of these engines before?"
-- Options: `Godot` / `Unity` / `Unreal Engine 5` / `Multiple — I'll explain` / `None of them`
+- Options: `Godot` / `Unity` / `Unreal Engine 5` / `Bevy` / `Multiple — I'll explain` / `None of them`
 - If they pick a specific engine → recommend that engine. Prior experience outweighs all other factors. Confirm with them and skip the matrix.
 - If "None" or "Multiple" → continue to the questions below.
 
@@ -52,11 +52,14 @@ mode) and Read those ranges with offset and limit:
   - Web → Godot exports cleanly to web; Unity WebGL is functional; Unreal has poor web support
   - PC only → all engines viable; other factors decide
   - Multiple → Unity is the most portable across PC/mobile/console
+  - Bevy → bevy.org lists "Windows, MacOS, Linux, Web, iOS, Android"; consoles are
+    not on that list, so a console target rules Bevy out unless the user already
+    has a console port of it
 
 1. **What kind of game?** (2D, 3D, or both?)
 2. **Primary input method?** (keyboard/mouse, gamepad, touch, or mixed?)
 3. **Team size and experience?** (solo beginner, solo experienced, small team?)
-4. **Any strong language preferences?** (GDScript, C#, C++, visual scripting?)
+4. **Any strong language preferences?** (GDScript, C#, C++, Rust, visual scripting?)
 5. **Budget for engine licensing?** (free only, or commercial licenses OK?)
 
 ### Produce a recommendation
@@ -83,6 +86,12 @@ Do NOT use a simple scoring matrix that eliminates engines. Instead, reason thro
 - Licensing reality: 5% royalty only applies AFTER $1M gross revenue per title. For a first game or any game that doesn't reach $1M, it costs nothing. This threshold is high enough that most indie developers will never pay it.
 - Best fit: AAA-quality 3D; large open-world games; photorealistic visuals; developers with C++ experience or willing to use Blueprint; games targeting high-end PC/console where visual fidelity is a core selling point
 
+**Bevy**
+- Genuine strengths: code-first ECS in Rust: game logic is plain Rust systems, and a system can be unit-tested headless with `cargo test` (no editor or GPU in the loop); free and open source, dual-licensed MIT or Apache-2.0 (`cargo info bevy`); bevy.org lists Windows, MacOS, Linux, Web, iOS and Android
+- Real limitations: Bevy's own README (0.20.1) calls it early-stage, with important features missing and sparse documentation, and says a release with breaking API changes ships roughly every three months, each with a migration guide on bevy.org; bevy.org lists no editor, so levels and UI are built in code or scene files; no physics engine ships with it (a third-party crate is the project's choice); the minimum Rust version tracks the latest stable release (bevy.org setup page), and Rust compile times are long enough that the same page has a section on speeding them up; consoles are not on its platform list
+- Licensing reality: MIT or Apache-2.0, at the user's choice. Neither license has a revenue threshold or royalty.
+- Best fit: programmers who already write Rust, or want to, and prefer code over an editor; 2D and contained 3D; projects that can either pin one Bevy version or budget a migration every few months
+
 **Genre-specific guidance** (factor this into the recommendation):
 - 2D any style → Godot strongly preferred
 - 3D stylized / atmospheric / contained world → Godot viable, Unity solid alternative
@@ -94,6 +103,7 @@ Do NOT use a simple scoring matrix that eliminates engines. Instead, reason thro
 - Action RPG / Soulslike → Unity or Unreal for 3D; community support and assets matter here
 - Platformer 2D → Godot
 - Strategy / top-down / RTS → Godot or Unity depending on 2D vs 3D
+- Any genre, code-first and Rust-fluent, no visual editor wanted → Bevy is a candidate; weigh it against its release cadence above
 
 **Recommendation format:**
 1. Show a comparison table with the user's specific factors as rows

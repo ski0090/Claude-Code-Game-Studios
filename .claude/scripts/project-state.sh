@@ -202,14 +202,10 @@ PROTO=$(count prototypes -mindepth 1 -maxdepth 1 -type d)
 SPRINT=$(count production/sprints -maxdepth 1 -type f -name '*.md')
 MILE=$(count production/milestones -maxdepth 1 -type f -name '*.md')
 
-ORIGIN=""
-if [ -f .git/config ]; then
-  ORIGIN=$(awk '
-    { sub(/\r$/, "") }
-    /^[ \t]*\[/ { inorigin = ($0 ~ /^[ \t]*\[remote "origin"\]/); next }
-    inorigin && /^[ \t]*url[ \t]*=/ { sub(/^[ \t]*url[ \t]*=[ \t]*/, ""); sub(/[ \t]+$/, ""); print; exit }
-  ' .git/config)
-fi
+# In a worktree or submodule .git is a file, and the remotes live in the
+# common git dir's config; outside a repo (a bare .git/config) fall back to it.
+GITDIR=$(git rev-parse --git-common-dir 2>/dev/null) || GITDIR=.git
+ORIGIN=$(git config --file "$GITDIR/config" --get remote.origin.url 2>/dev/null)
 
 row root "$ROOT" -
 row engine "$ENGINE" "${ESRC:-unset}"
@@ -223,7 +219,7 @@ row story "$STORY" "production/epics/**/story-*.md"
 row prototype "$PROTO" "prototypes/*/"
 row sprint "$SPRINT" "production/sprints/*.md"
 row milestone "$MILE" "production/milestones/*.md"
-row origin_url "$ORIGIN" "$( [ -f .git/config ] && echo .git/config || echo absent )"
+row origin_url "$ORIGIN" "$( [ -f "$GITDIR/config" ] && echo "$GITDIR/config" || echo absent )"
 stage_rows
 
 # help/SKILL.md Step 2's ladder, most advanced match first. 10 is help's own

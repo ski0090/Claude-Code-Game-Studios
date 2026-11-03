@@ -93,10 +93,11 @@ Then say: "I'll lay out the full path in a moment."
 
 Work out two values.
 
-**Stage.** Paths A, B and C: `Concept`. Path D, from the Phase 1 rows:
+**Stage.** Paths A, B and C: `Concept`. Path D, from the Phase 1 rows, first match:
 
 | On disk | Stage |
 |---|---|
+| `source_files` 10 or more | none: the code can be ahead of the design files, so `/project-stage-detect` (the path's first step) sets it. Save no stage |
 | no engine, or nothing beyond a concept (`gdd_files` 0) | `Concept` |
 | `gdd_files` 1 or more, `adr` 0 | `Systems Design` |
 | `adr` 1 or more | `Technical Setup` |
@@ -126,13 +127,15 @@ What I'll set up
   /settings changes either of these any time.
 ```
 
+With no stage, the Stage line reads `not set ([N] source files: /project-stage-detect sets it)`.
+
 Then ask with the question tool: "Save these to `project.yaml` (and the stage to
 `production/stage.txt`)?" Options: `Save them` / `Don't save`. Ask no question about the rigor
 itself: the card shows it, and `/settings` changes it.
 
-- **Save them:** run `bash .claude/scripts/set-stage.sh "[stage]"`, then, only when rigor was not
-  already set, `bash .claude/scripts/config-set.sh modes.rigor [value]`. Check the read-back rows
-  match. Say: "Saved. Rigor `[value]` sets six other settings; `/settings` shows them and changes
+- **Save them:** run `bash .claude/scripts/set-stage.sh "[stage]"` (with no stage, skip it), then,
+  only when rigor was not already set, `bash .claude/scripts/config-set.sh modes.rigor [value]`.
+  Check the read-back rows match. Say: "Saved. Rigor `[value]` sets six other settings; `/settings` shows them and changes
   any of them."
 - **Don't save**, or anything other than an explicit yes: write nothing, keep the values for this
   run, and say they were not saved.

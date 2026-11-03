@@ -255,21 +255,38 @@ the game's own launch argument (see "Reaching the state").
 ### Bevy — a Besfa game
 
 A Besfa game (its `Cargo.toml` names a `besfa_*` crate or a `besfa_editor`
-feature) is captured the same way, with two differences:
+feature) needs no plugin when the installed Besfa CLI can capture: run
+`besfa screenshot --help` first (exit 0: it can; exit 2: it predates
+ski0090/besfa#19).
 
-- **Launch with `commands.run`**, which carries the editor's features
-  (`cargo run --features bevy/dynamic_linking,besfa_editor`), then `--
-  --screenshot <abs path> --frames 60`. Plain `cargo run` rebuilds Bevy in the
-  shared target. Run from a shell, the `besfa_editor` feature opens the game's
-  own window, unpaused: the editor's edit mode needs environment variables only
-  the editor and `besfa mcp` set.
-- **A scene or level story can use the besfa MCP instead.** `send
-  {"command":"screenshot","file":"production/qa/evidence/<slug>/01-<what>.png","eye":[x,y,z],"target":[x,y,z]}`
-  (or `"top":<metres>` for a map view) renders the scene from a camera of its
-  own, without editor overlays, to a path relative to the project. It shows
-  what was placed, not what the player sees: no game camera, no UI. A HUD or
-  menu story needs the plugin above. Never `start` the MCP game while the
-  editor has the project open (`.claude/rules/scene-files.md`).
+- **`besfa screenshot`** (preferred):
+  ```
+  besfa screenshot "$(pwd -W 2>/dev/null || pwd)/production/qa/evidence/shop-panel/01-shop-open.png" --wait 2 -- --state shop
+  ```
+  It builds with the editor's features, runs the game with no window, plays it
+  for `--wait` seconds (default 0), and saves what the player sees, the game's
+  own cameras with their UI, at 1280x720, once models and shaders have loaded.
+  Then it stops the game; it never writes the scene file. The path must be a
+  `.png` inside the project; folders are created. Exit 0 with
+  `Screenshot saved to <path>` only when the file was written; 30 with one
+  error line otherwise (build failed, no game camera, path outside the
+  project). Game arguments after `--` reach the story's surface, as in
+  "Reaching the state".
+- **Otherwise the plugin above**, launched with `commands.run` (the editor's
+  features: `besfa run` or `cargo run --features bevy/dynamic_linking,besfa_editor`),
+  then `-- --screenshot <abs path> --frames 60`. Plain `cargo run` rebuilds
+  Bevy in the shared target. Run from a shell, the `besfa_editor` feature opens
+  the game's own window, unpaused: the editor's edit mode needs environment
+  variables only the editor and `besfa mcp` set.
+- **Interactively, through the besfa MCP**: `start` (with `"args"` for game
+  arguments where the server has them), `entities` (waits for the scene),
+  `send {"command":"play"}` and any `key` commands to reach the state, then
+  `send {"command":"screenshot","game":true,"file":"production/qa/evidence/<slug>/01-<what>.png"}`
+  (relative to the project), `Read` it, `stop`. Without `"game":true`, with
+  `"eye"`/`"target"` or `"top":<metres>`, the same command renders the scene
+  from a camera of its own with no game camera and no UI: right for a level
+  story, wrong for a HUD. Never `start` the MCP game while the editor has the
+  project open (`.claude/rules/scene-files.md`).
 
 ### Any engine — OS capture fallback
 

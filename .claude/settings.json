@@ -150,13 +150,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh\"",
-            "timeout": 10
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/ccg-session.sh\" session-start --fill",
+            "timeout": 60
           },
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/detect-gaps.sh\"",
-            "timeout": 10
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/ccg-session.sh\" detect-gaps",
+            "timeout": 60
           }
         ]
       }

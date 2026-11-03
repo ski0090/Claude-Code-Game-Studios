@@ -2,6 +2,13 @@
 
 Hooks are configured in `.claude/settings.json` and fire automatically:
 
+On the ccg `besfa` branch the two SessionStart hooks run through
+`.claude/ccg-session.sh <hook>`. It is a copied file, not linked, in a game that
+mounts ccg as the `.ccg` submodule. It fills an empty `.ccg` first (a new
+worktree starts empty, so the linked hooks would not exist yet), in
+`CLAUDE_PROJECT_DIR` and in the checkout the payload's `cwd` names. In ccg
+itself it only runs the hook.
+
 | Hook | Event | Trigger | Action |
 | ---- | ----- | ------- | ------ |
 | `validate-commit.sh` | PreToolUse (Bash, PowerShell) | `git commit` commands | Validates design doc sections, JSON data files, hardcoded values, TODO format |

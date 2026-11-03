@@ -66,6 +66,7 @@ No gate IDs assigned.
 - Places the test at `tests/unit/combat.rs` and declares it as `mod combat;` in `tests/unit/main.rs` (an undeclared file is never compiled), or in-file under `#[cfg(test)]` when it needs private items
 - Notes that `CombatPlugin` must be `pub` in the library crate for `tests/` to reach it
 - Asks before writing, unless an orchestrating skill named the `tests/` path
+- Variant — a Besfa game with no `src/lib.rs` (`Cargo.toml` depends on `besfa_components`): puts the test in a `#[cfg(test)] mod tests` at the end of `src/combat.rs` with `use super::*;`, creates nothing under `tests/`, proposes no `lib.rs`, and runs it with `commands.test`, not bare `cargo test`
 
 ---
 

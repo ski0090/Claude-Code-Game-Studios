@@ -28,7 +28,12 @@ When in doubt, use `specialists.code` from `project.yaml`.
 
 ## Tests
 
-Tests live in `tests/` — not in `src/`.
+Tests live in `tests/` — not in `src/`. Bevy is the exception, and the test
+roots per engine are in `.claude/docs/directory-structure.md`: a Bevy crate with
+no `src/lib.rs` (a bin-only crate, as `besfa new` makes a Besfa game) keeps
+every test in a `#[cfg(test)] mod tests` inside the `src/` file it tests, because
+a target under `tests/` cannot link a binary. Do not add a `lib.rs` to make
+room for `tests/`.
 Run `/test-setup` to scaffold the test framework if it doesn't exist yet.
 Every gameplay system should have unit tests covering its formulas and edge cases.
 

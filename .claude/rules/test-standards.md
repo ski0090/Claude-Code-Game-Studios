@@ -140,6 +140,11 @@ fn take_damage_reduces_health() {
 }
 ```
 
+A bin-only Bevy crate (no `src/lib.rs`, such as a Besfa game) has no `tests/`
+target that could reach its code: the same test goes in a `#[cfg(test)] mod
+tests` at the end of the `src/` file under test, with `use super::*;` in place
+of `use <crate>::…`.
+
 **Incorrect**:
 
 ```gdscript

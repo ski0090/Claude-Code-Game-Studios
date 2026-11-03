@@ -907,7 +907,7 @@ case "$ENG" in
       need cargo_toml Cargo.toml "no Cargo.toml in the root: cargo test has no crate to build (run /setup-engine)"
     fi
     if [ ! -f src/lib.rs ]; then
-      need lib_crate src/lib.rs "tests under tests/ see only the library crate's pub API: put the game in src/lib.rs, with src/main.rs only building the App"
+      need lib_crate src/lib.rs "no src/lib.rs: a bin-only crate (a Besfa game) cannot be reached from tests/, so its tests are #[cfg(test)] modules in src/ and the tests/ roots run nothing; remove them, or move the game into src/lib.rs if the user wants tests/"
     fi ;;
 esac
 

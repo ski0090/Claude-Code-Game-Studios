@@ -30,7 +30,7 @@ own toolchain:
 | **Godot** | `src/` | No constraint — Godot loads from `res://` anywhere under the project root. |
 | **Unity** | `Assets/` | Unity compiles **only** `Assets/` and `Packages/`. Code outside them is invisible to the compiler. |
 | **Unreal** | `Source/<Module>/` | UnrealBuildTool discovers modules under `Source/`; content lives in `Content/`. A module elsewhere is not built. |
-| **Bevy** | `src/` | Cargo's default: `src/lib.rs` is the library crate, `src/main.rs` the binary. Game logic goes in the library, `pub`, because the tests under `tests/` link only its public API; `main.rs` only builds the `App`. |
+| **Bevy** | `src/` | Cargo's default: `src/lib.rs` is the library crate, `src/main.rs` the binary. Game logic goes in the library, `pub`, because the tests under `tests/` link only its public API; `main.rs` only builds the `App`. **A bin-only crate** (no `src/lib.rs`, as `besfa new` makes a Besfa game) keeps its logic in modules `main.rs` declares; do not add a `lib.rs` to it. |
 
 **Resolve the code root from `engine.name` before writing any source file.** A
 path shown as `src/…` alone is a Godot example: read it as *"the code root"* and
@@ -50,6 +50,6 @@ those two files.
 | **Godot** | `tests/unit/`, `tests/integration/` | — |
 | **Unity** | `Assets/Tests/EditMode/`, `Assets/Tests/PlayMode/` | not compiled: "0 tests, Passed" |
 | **Unreal** | `Source/<Module>/Private/Tests/` | not built: "No automation tests matched" |
-| **Bevy** | `tests/unit/main.rs`, `tests/integration/main.rs` (each declares its systems as `mod <system>;`, one file per system in the same folder); helpers in `tests/helpers/mod.rs`, declared from each test root with `#[path = "../helpers/mod.rs"] mod helpers;`; unit tests of private items in a `#[cfg(test)]` module of the `src/` file | not compiled: a file that `main.rs` does not `mod`-declare is never compiled — no error, no tests (verified on 0.20.1) |
+| **Bevy** | `tests/unit/main.rs`, `tests/integration/main.rs` (each declares its systems as `mod <system>;`, one file per system in the same folder); helpers in `tests/helpers/mod.rs`, declared from each test root with `#[path = "../helpers/mod.rs"] mod helpers;`; unit tests of private items in a `#[cfg(test)]` module of the `src/` file. **Bin-only crate** (no `src/lib.rs`): only the `#[cfg(test)] mod tests` in the `src/` file under test, since a `tests/` target cannot link a binary | not compiled: a file that `main.rs` does not `mod`-declare is never compiled — no error, no tests (verified on 0.20.1) |
 
 Read `tests/unit/[system]/` (or `integration/`) anywhere as the test root plus `[System]/`.

@@ -254,6 +254,14 @@ Test name: "<Project>.[System].[Scenario]"
 
 #### Bevy (`Engine: Bevy`)
 
+**Bin-only crate first.** When there is no `src/lib.rs` (a Besfa game from
+`besfa new` has only `src/main.rs`), skip `tests/unit/main.rs` and
+`tests/integration/main.rs` below: a test target cannot link a binary, so they
+would run nothing. Do not create or propose a `lib.rs` either. Its tests are
+`#[cfg(test)] mod tests` in the `src/` file under test, run by the same
+`commands.test`; write that in the README and the summary. The rest of this
+section applies.
+
 **Do not write a runner.** Rust's built-in test harness runs with `cargo
 test`, the `commands.test` `/setup-engine` writes. Cargo builds `tests/*.rs`
 and `tests/<dir>/main.rs` as test targets and nothing else under `tests/`, so
@@ -276,8 +284,8 @@ checks no game code:
 ```
 
 Tests under `tests/` see only the library crate's `pub` items: the game lives
-in `src/lib.rs`, and `src/main.rs` only builds the `App`. If `src/lib.rs` is
-missing, say so in the summary — the first test file cannot reach the game.
+in `src/lib.rs`, and `src/main.rs` only builds the `App`. With no `src/lib.rs`,
+see "Bin-only crate first" above.
 A test of a private item goes in its source file's own `#[cfg(test)] mod tests`.
 
 Note in the README: **Running Bevy tests**

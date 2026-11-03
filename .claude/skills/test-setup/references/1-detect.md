@@ -27,7 +27,9 @@
      `tests/integration/` is compiled only when that folder's `main.rs` declares
      it. On Bevy also check `Cargo.toml` and `src/lib.rs`: tests under `tests/`
      link only the library crate's `pub` items, so without `src/lib.rs` they
-     cannot reach the game.
+     cannot reach the game. No `src/lib.rs` means a bin-only crate (a Besfa
+     game is one): its tests are `#[cfg(test)]` modules in `src/`, and Phase 3
+     creates no `tests/` roots for it.
 
 3. **Report findings**:
    - "Engine: [engine]. Test directory: [found / not found]. CI workflow: [found / not found]."

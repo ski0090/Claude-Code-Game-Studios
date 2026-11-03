@@ -13,8 +13,12 @@
 #     Asks GitHub for the latest release and writes the cache. Run in the
 #     background by update_check_notice; safe to run by hand.
 #
-# Off when `updates.check: false` (project.local.yaml first, then project.yaml;
-# see effects-map.md) or when the CI environment variable is set: nobody reads a
+# On only when `updates.check: true` on this `besfa` branch (project.local.yaml
+# first, then project.yaml; see effects-map.md), and off when the CI
+# environment variable is set. A Besfa game gets these files through a
+# submodule that tracks the ccg fork's `besfa` branch, so a Donchitos release
+# says nothing about what the game can update to, and the daily request to
+# GitHub buys it nothing. Off in CI too: nobody reads a
 # session-start line in CI, and a fresh runner has no cache to stop it asking
 # GitHub on every run.
 #
@@ -66,7 +70,7 @@ _update_check_newer() {
   return 1
 }
 
-# 0 unless updates.check is false. project.local.yaml first (it is a personal
+# 0 only when updates.check is true. project.local.yaml first (it is a personal
 # setting), then project.yaml. A value other than true or false is skipped, as
 # resolve_setting skips it, and the session-start schema check names it.
 # awk, not get_effective_yaml_key: that starts Python twice per session start.
@@ -89,7 +93,7 @@ _update_check_enabled() {
       true)  return 0 ;;
     esac
   done
-  return 0
+  return 1
 }
 
 update_check_notice() {

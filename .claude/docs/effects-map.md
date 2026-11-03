@@ -2220,7 +2220,8 @@ By file size, not lines: token cost follows bytes, and one table row can be 2 KB
 **Controls:** Whether session start tells you that a newer Claude Code Game
 Studios release is out  
 **Values:** `true` | `false`  
-**Default:** `true`  
+**Default:** `false` on the ccg `besfa` branch (`true` upstream): a Besfa game
+updates through its submodule, not from Claude Code Game Studios releases  
 **Set by:** `/settings` (`/settings --local updates.check=false` turns it off
 for you only)  
 **Read by:** `session-start.sh`, through `update-check.sh`
@@ -2232,7 +2233,7 @@ for you only)
 > call (`UPGRADING.md`).
 
 > **Priority chain:** `updates.check` in `project.local.yaml` → `project.yaml` →
-> default **`true`**. A value other than `true` or `false` is skipped and named
+> default **`false`** (on the `besfa` branch). A value other than `true` or `false` is skipped and named
 > in the session-start schema errors. The check is also off whenever the `CI`
 > environment variable is set: nobody reads session start there.
 

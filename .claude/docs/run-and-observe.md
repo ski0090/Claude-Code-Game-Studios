@@ -189,8 +189,10 @@ first time a Bevy story needs a screenshot, `/dev-story` asks to write it,
 verbatim, to `src/screenshot_on_arg.rs`, and to add two lines: `pub mod
 screenshot_on_arg;` in `src/lib.rs`, and
 `.add_plugins(<crate>::screenshot_on_arg::ScreenshotOnArgPlugin)` beside
-`DefaultPlugins` in `src/main.rs`. Unlike Unity's script, a Bevy plugin does not
-register itself. It does nothing unless the game was launched with
+`DefaultPlugins` in `src/main.rs`. A bin-only crate (no `src/lib.rs`, such as a
+Besfa game) takes both lines in `src/main.rs`: `mod screenshot_on_arg;` and
+`.add_plugins(screenshot_on_arg::ScreenshotOnArgPlugin)` beside its other
+plugins. Unlike Unity's script, a Bevy plugin does not register itself. It does nothing unless the game was launched with
 `--screenshot`:
 
 ```rust
@@ -249,6 +251,44 @@ report a black capture as `OBSERVED`.
 
 The plugin does not choose a scene or state. Reach the story's surface through
 the game's own launch argument (see "Reaching the state").
+
+### Bevy — a Besfa game
+
+A Besfa game (its `Cargo.toml` names a `besfa_*` crate or a `besfa_editor`
+feature) needs no plugin when the installed Besfa CLI can capture: run
+`besfa screenshot --help` first (exit 0: it can; exit 2: it predates
+ski0090/besfa#19).
+
+- **`besfa screenshot`** (preferred):
+  ```
+  besfa screenshot "$(pwd -W 2>/dev/null || pwd)/production/qa/evidence/shop-panel/01-shop-open.png" --wait 2 -- --state shop
+  ```
+  It builds with the editor's features, runs the game with no window, plays it
+  for `--wait` seconds (default 0), and saves what the player sees, the game's
+  own cameras with their UI, at 1280x720, once models and shaders have loaded.
+  No window is not step 1's forbidden headless run: the renderer still draws
+  every game camera, into an offscreen image instead of a window.
+  Then it stops the game; it never writes the scene file. The path must be a
+  `.png` inside the project; folders are created. Exit 0 with
+  `Screenshot saved to <path>` only when the file was written; 30 with one
+  error line otherwise (build failed, no game camera, path outside the
+  project). Game arguments after `--` reach the story's surface, as in
+  "Reaching the state".
+- **Otherwise the plugin above**, launched with `commands.run` (the editor's
+  features: `besfa run` or `cargo run --features bevy/dynamic_linking,besfa_editor`),
+  then `-- --screenshot <abs path> --frames 60`. Plain `cargo run` rebuilds
+  Bevy in the shared target. Run from a shell, the `besfa_editor` feature opens
+  the game's own window, unpaused: the editor's edit mode needs environment
+  variables only the editor and `besfa mcp` set.
+- **Interactively, through the besfa MCP**: `start` (with `"args"` for game
+  arguments where the server has them), `entities` (waits for the scene),
+  `send {"command":"play"}` and any `key` commands to reach the state, then
+  `send {"command":"screenshot","game":true,"file":"production/qa/evidence/<slug>/01-<what>.png"}`
+  (relative to the project), `Read` it, `stop`. Without `"game":true`, with
+  `"eye"`/`"target"` or `"top":<metres>`, the same command renders the scene
+  from a camera of its own with no game camera and no UI: right for a level
+  story, wrong for a HUD. Never `start` the MCP game while the editor has the
+  project open (`.claude/rules/scene-files.md`).
 
 ### Any engine — OS capture fallback
 
@@ -310,6 +350,7 @@ None of Godot, Unity or Unreal installs onto `PATH` on Windows. `engine.path` in
 engine on this machine". Absence of a path is not absence of an engine. Bevy is
 the exception: it is a crate the project's `Cargo.toml` pulls in, so the only
 binary needed is `cargo` (rustup puts it on `PATH`), and `engine.path` is unused.
+A Besfa game is the same: the editor is not needed to run or capture it.
 
 ---
 

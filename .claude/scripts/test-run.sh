@@ -187,10 +187,11 @@ else
       *) first=${CFG_TEST%% *} ;;
     esac
   fi
-  # Bevy's likewise only when it says cargo: Bevy has no editor, the toolchain is cargo.
+  # Bevy's likewise only when it says cargo, or besfa (a Besfa game's CLI, which
+  # runs cargo with the editor's features): Bevy has no editor binary of its own.
   if [ "$ENGINE" = godot ] || [ "$ENGINE" = bevy ]; then
     _base=${first##*/}; _base=$(printf '%s' "${_base##*\\}" | tr 'A-Z' 'a-z')
-    case "$ENGINE:$_base" in godot:*godot*|bevy:*cargo*) ;; *) first="" ;; esac
+    case "$ENGINE:$_base" in godot:*godot*|bevy:*cargo*|bevy:*besfa*) ;; *) first="" ;; esac
   fi
   if [ "$ENGINE" != unreal ] && exe_ok "$first"; then EXE="$first"; EXE_SRC="commands.test"
   elif [ "$ENGINE" != bevy ] && [ -n "$ENGINE_PATH" ] && { [ "$ENGINE" = unreal ] && [ -d "$ENGINE_PATH" ] || { [ "$ENGINE" != unreal ] && exe_ok "$ENGINE_PATH"; }; }; then EXE="$ENGINE_PATH"; EXE_SRC="engine.path"

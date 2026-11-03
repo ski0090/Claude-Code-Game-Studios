@@ -30,7 +30,7 @@ the only place its test runner compiles them (`.claude/docs/directory-structure.
 | Godot | `tests/helpers/` |
 | Unity | `Assets/Tests/EditMode/Helpers/` — inside the `EditModeTests` assembly `/test-setup` creates. If PlayMode tests need the same helpers, ask before creating `Assets/Tests/Helpers/TestHelpers.asmdef` and referencing it from both test assemblies. |
 | Unreal | `Source/<Module>/Private/Tests/Helpers/` |
-| Bevy | `tests/helpers/`, as one module, `tests/helpers/mod.rs`. Cargo does not build it on its own (it is not `tests/*.rs` or `tests/<dir>/main.rs`); each test root that uses it declares it at the top of its `main.rs`: `#[path = "../helpers/mod.rs"] mod helpers;` — in `tests/unit/main.rs` and `tests/integration/main.rs` alike. Ask before adding that line to a `main.rs`. |
+| Bevy | `tests/helpers/`, as one module, `tests/helpers/mod.rs`. Cargo does not build it on its own (it is not `tests/*.rs` or `tests/<dir>/main.rs`); each test root that uses it declares it at the top of its `main.rs`: `#[path = "../helpers/mod.rs"] mod helpers;` — in `tests/unit/main.rs` and `tests/integration/main.rs` alike. Ask before adding that line to a `main.rs`. A bin-only crate (no `src/lib.rs`, such as a Besfa game) has no `tests/` roots: the helpers go in `src/test_helpers.rs`, declared from `src/main.rs` as `#[cfg(test)] mod test_helpers;`; ask before adding that line. |
 
 `tests/helpers/` below means the helper root for the project's engine.
 

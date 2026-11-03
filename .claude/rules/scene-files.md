@@ -43,10 +43,34 @@ When you edit the text by hand:
 
 ## Bevy (`.scn.ron`)
 
-Bevy has no editor: a `.scn.ron` is RON that `DynamicWorld::serialize` wrote or
-a person typed, and the `WorldAssetLoader` in `bevy_world_serialization` (not
-`bevy_scene`, which is BSN since 0.19) loads it as a `DynamicWorld`. When you
-edit one:
+A `.scn.ron` is RON that `DynamicWorld::serialize` wrote or a person typed, and
+the `WorldAssetLoader` in `bevy_world_serialization` (not `bevy_scene`, which is
+BSN since 0.19) loads it as a `DynamicWorld`. Bevy itself has no editor; a Besfa
+game (its `Cargo.toml` names a `besfa_*` crate or a `besfa_editor` feature) has
+one, below.
+
+### A Besfa game: edit through Besfa
+
+The Besfa editor writes the game's scenes (`assets/scenes/main.scn.ron` and the
+prefabs under `assets/`), and saves its whole in-memory scene over the file.
+
+- **Edit through the besfa MCP server** (`besfa mcp`, which `besfa new` puts in
+  `.mcp.json`): `start` runs the game in edit mode, `entities` lists ids and
+  component values, `send` places, sets, parents and deletes (`instantiate`,
+  `spawn`, `set`, `insert`, `remove`, `parent`, `delete`, terrain and scatter
+  commands), `send {"command":"save"}` writes the file, `stop` ends it. A
+  `screenshot` command renders the scene to a PNG for checking the result.
+  Or ask the user to make the change in the editor.
+- **Never edit the file by hand, and never `start` the MCP game, while the
+  editor has the project open**: the editor's next save overwrites the edit, and
+  two writers corrupt it. Nothing tells you the editor is open, so ask the user
+  first (a subagent, which cannot ask, returns that question instead of editing).
+- A hand edit with the editor closed follows the rules below, then load it
+  through the MCP (`start`, then `entities`) to confirm every entity spawns.
+
+### Any Bevy game
+
+When you edit one:
 
 - Keep it valid RON. A syntax error fails the whole load.
 - Every type path must name a type the game registers for reflection

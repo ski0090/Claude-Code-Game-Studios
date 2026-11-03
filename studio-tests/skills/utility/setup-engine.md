@@ -328,6 +328,18 @@ Fixture defaults.
 - [ ] Verdict is COMPLETE
 - [ ] Variant — a `Cargo.toml` already exists: it is not overwritten, the skill
   says so and skips Section 7.5's writes
+- [ ] Variant — a Besfa game (`Cargo.toml` declares `[features] besfa_editor`
+  and depends on `besfa_components` and `bevy_rapier3d`; `.cargo/config.toml`
+  sets `target-dir` under `Besfa`) and `besfa test --help` exits 2: `test`,
+  `run` and `smoke` carry `--features bevy/dynamic_linking,besfa_editor`,
+  `smoke` is `cargo build --all-targets …` (not `cargo check`), `build` stays
+  `cargo build --release`, the skill names the signal that matched and why it
+  wrote cargo lines, and `engine.physics` is `bevy_rapier3d`
+- [ ] Variant — the same game with `besfa test --help` exiting 0: `test` is
+  `besfa test`, `run` `besfa run`, `smoke` `besfa build --all-targets`, `build`
+  `cargo build --release`
+- [ ] Variant — the same game with no `besfa_editor` in `[features]`: the three
+  commands carry `--features bevy/dynamic_linking` alone
 
 ---
 

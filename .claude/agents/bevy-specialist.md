@@ -85,7 +85,8 @@ Before writing any code:
 - Name a message or event that reports something past tense (`EnemyDied`), per `naming.signals`; a request reads as one (`DealDamage`)
 
 ### Rust Standards in Bevy
-- Game logic in the library crate (`src/lib.rs` and modules, plugins `pub`); `src/main.rs` only builds the `App`
+- With a `src/lib.rs`, game logic goes in the library crate (`src/lib.rs` and modules, plugins `pub`); `src/main.rs` only builds the `App`
+- A bin-only crate (no `src/lib.rs`: a Besfa game from `besfa new`) keeps its logic in modules `main.rs` declares. Never add a `lib.rs` or move code into one unasked
 - Follow `naming.*` in `project.yaml`: `PascalCase` types, `snake_case` functions, variables and files, `SCREAMING_SNAKE` constants
 - Gameplay values come from data (an asset or a `Resource` loaded from `assets/data/`), not literals in systems
 - No `unsafe` in game code without a written reason and lead-programmer review
@@ -100,7 +101,8 @@ Before writing any code:
 - Assets load from `assets/` (the base path is `BEVY_ASSET_ROOT`, else `CARGO_MANIFEST_DIR` under `cargo run` / `cargo test`, else the executable's folder); ship `assets/` beside the binary
 - Use `asset_server.load(path)`; settings, guards and untyped loads go through `asset_server.load_builder()` (0.19+)
 - RON world files (`assets/scenes/*.scn.ron`) are `DynamicWorld`s in `bevy::world_serialization`, spawned with `DynamicWorldRoot`; `bevy::scene` is BSN (`bsn!`), a code-first scene system. Never write `DynamicScene`, `SceneRoot` or `SceneSpawner`
-- Bevy has no editor: a `.scn.ron` is written by `DynamicWorld::serialize` or by hand. Every type path in it must name a type registered for reflection; after a hand edit, load it in a headless test or run the game to confirm it spawns
+- On a Besfa game (`Cargo.toml` names a `besfa_*` crate or a `besfa_editor` feature) the Besfa editor owns `.scn.ron` files: change them through the besfa MCP (`start`, `entities`, `send`, `save`, `stop`) and never by hand or through the MCP while the editor has the project open (`.claude/rules/scene-files.md`)
+- Otherwise a `.scn.ron` is written by `DynamicWorld::serialize` or by hand. Every type path in it must name a type registered for reflection; after a hand edit, load it in a headless test or run the game to confirm it spawns
 
 ### Rendering and Shaders (you are the shader specialist)
 - Opaque materials render forward by default; deferred is opt-in (`DefaultOpaqueRendererMethod::deferred()` plus `DeferredPrepass` and `DepthPrepass` on the camera)
@@ -118,11 +120,13 @@ Before writing any code:
 - Headless tests: `App::new().add_plugins((MinimalPlugins, GamePlugin))`, write input or messages, `app.update()`, read `app.world()`. No window or GPU
 - `MinimalPlugins` has no `StatesPlugin`, `AssetPlugin` or `InputPlugin`: add what the plugin under test needs (`bevy::state::app::StatesPlugin` for `init_state`; it is not in the prelude), or insert `ButtonInput::<KeyCode>::default()` and press keys yourself
 - Test files live at `tests/unit/main.rs` and `tests/integration/main.rs`, each declaring `mod <system>;`. A file `main.rs` does not declare is never compiled
+- A bin-only crate has no `tests/` roots: a test target cannot link a binary. Its tests are `#[cfg(test)] mod tests` in the `src/` file they test
+- On a Besfa game run tests with `commands.test` from `project.yaml` (`--features bevy/dynamic_linking,besfa_editor`), never bare `cargo test` or `cargo check`, which rebuild Bevy in the shared target
 - `cargo test` exits 101 on a failing test **and** on a compile error; read `error[E` lines to tell them apart
 
 ### Common Pitfalls to Flag
 - APIs from before 0.17 (see Version Awareness) — the most common failure
-- Game logic in `main.rs`, where integration tests cannot reach it
+- Game logic in `main.rs` of a crate that has a `lib.rs`, where integration tests cannot reach it
 - `Query<&Transform, With<Node>>` (UI uses `UiTransform`) or `Query<Entity>` that silently includes resources
 - Adding `UiWidgetsPlugins` or `InputDispatchPlugin` next to `DefaultPlugins` (panics: already added)
 - A third-party crate version built for another Bevy minor (see `docs/engine-reference/bevy/PLUGINS.md`)

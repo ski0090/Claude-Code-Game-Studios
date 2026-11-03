@@ -31,7 +31,9 @@ project's locked Bevy**, and an agent citing it correctly then emits APIs that d
 not compile. **Check `Installed at pin time` above before trusting a
 version-qualified claim** — `NOT DETERMINED` means the gap is unknown, not absent.
 
-Bevy has no editor binary: the installed version is the `[[package]]` with
+Bevy is a crate, not an installed editor; even a Besfa game's editor builds the
+game with the game's own locked Bevy. The installed version is the
+`[[package]]` with
 `name = "bevy"` in `Cargo.lock`, read from its `version = "0.20.x"` line, and
 `bevy = "0.20"` in `Cargo.toml` resolves to any 0.20.x. Compare major.minor
 (`0.20`). A lock on 0.19 means every 0.20 row in `breaking-changes.md` is ahead

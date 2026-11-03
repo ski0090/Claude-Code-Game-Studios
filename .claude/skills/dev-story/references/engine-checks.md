@@ -33,20 +33,27 @@ The commands are from Epic's documentation, as recorded in
 
 ## Bevy
 
-**Parse check:** the `commands.smoke` command, `cargo check --all-targets`. It
-compiles the library, the binary and every test target without running
-anything. Any line starting `error[E` (or `error: could not compile`) means the
+**Parse check:** the `commands.smoke` command, `cargo check --all-targets` (on
+a Besfa game `besfa build --all-targets`, or `cargo build --all-targets` with
+the editor's features, which reuse the shared build; run what `commands.smoke`
+says, never a bare cargo line, and expect exit 30 rather than 101 from
+`besfa build` on a compile error). It compiles the library, the binary and every test target without
+running anything. Any line starting `error[E` (or `error: could not compile`) means the
 code does not compile: report those lines, and the check fails whatever else
 the output says (the exit code is then 101). A clean check says the code
 compiles, not that it works. The first check on a fresh clone compiles Bevy
 itself and takes many minutes: give it a timeout of 1800 seconds.
 
-**Capture:** the "Bevy" section of `run-and-observe.md` (`### Bevy 0.20 — one
-plugin`). It needs `src/screenshot_on_arg.rs`, given word for word there, with
+**Capture:** on a Besfa game whose `besfa screenshot --help` exits 0, use
+`besfa screenshot` as `run-and-observe.md` (`### Bevy — a Besfa game`) gives
+it: no file is written into the game. Otherwise the "Bevy" section of
+`run-and-observe.md` (`### Bevy 0.20 — one plugin`). It needs `src/screenshot_on_arg.rs`, given word for word there, with
 `pub mod screenshot_on_arg;` in `src/lib.rs` and the plugin added in
-`src/main.rs`. When the project has none (look for `src/screenshot_on_arg.rs`),
-ask "May I write `src/screenshot_on_arg.rs` and add its plugin to `src/lib.rs`
-and `src/main.rs`?" and write them exactly as given before launching. Declined:
+`src/main.rs`; with no `src/lib.rs` (a bin-only crate, such as a Besfa game)
+both lines go in `src/main.rs`. When the project has none (look for
+`src/screenshot_on_arg.rs`), ask "May I write `src/screenshot_on_arg.rs` and
+add its plugin to `src/lib.rs` and `src/main.rs`?" (on a bin-only crate, to
+`src/main.rs`) and write them exactly as given before launching. Declined:
 nothing can capture, so report
 `Run result: NOT VERIFIED — screenshot_on_arg.rs not written`. Launch and read
 the image as that section says (an all-black image is a cold start: launch

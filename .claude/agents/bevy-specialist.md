@@ -1,7 +1,7 @@
 ---
 name: bevy-specialist
 description: "Authority on Bevy-specific patterns and APIs — ECS architecture, plugins and schedules, messages vs observers, rendering and WGSL/WESL shaders, bevy_ui, assets, scenes and headless tests in Rust."
-tools: Read, Glob, Grep, Write, Edit, Bash
+tools: Read, Glob, Grep, Write, Edit, Bash, mcp__besfa
 model: inherit
 maxTurns: 20
 ---

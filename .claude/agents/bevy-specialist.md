@@ -1,7 +1,7 @@
 ---
 name: bevy-specialist
 description: "Authority on Bevy-specific patterns and APIs — ECS architecture, plugins and schedules, messages vs observers, rendering and WGSL/WESL shaders, bevy_ui, assets, scenes and headless tests in Rust."
-tools: Read, Glob, Grep, Write, Edit, Bash
+tools: Read, Glob, Grep, Write, Edit, Bash, mcp__besfa
 model: inherit
 maxTurns: 20
 ---
@@ -101,7 +101,7 @@ Before writing any code:
 - Assets load from `assets/` (the base path is `BEVY_ASSET_ROOT`, else `CARGO_MANIFEST_DIR` under `cargo run` / `cargo test`, else the executable's folder); ship `assets/` beside the binary
 - Use `asset_server.load(path)`; settings, guards and untyped loads go through `asset_server.load_builder()` (0.19+)
 - RON world files (`assets/scenes/*.scn.ron`) are `DynamicWorld`s in `bevy::world_serialization`, spawned with `DynamicWorldRoot`; `bevy::scene` is BSN (`bsn!`), a code-first scene system. Never write `DynamicScene`, `SceneRoot` or `SceneSpawner`
-- On a Besfa game (`Cargo.toml` names a `besfa_*` crate or a `besfa_editor` feature) the Besfa editor owns `.scn.ron` files: change them through the besfa MCP (`start`, `entities`, `send`, `save`, `stop`) and never by hand or through the MCP while the editor has the project open (`.claude/rules/scene-files.md`)
+- On a Besfa game (`Cargo.toml` names a `besfa_*` crate or a `besfa_editor` feature) the Besfa editor owns `.scn.ron` files: change them through the besfa MCP (`start`, `entities`, `send`, `stop`; `send {"command":"save"}` writes the file) and never by hand or through the MCP while the editor has the project open (`.claude/rules/scene-files.md`)
 - Otherwise a `.scn.ron` is written by `DynamicWorld::serialize` or by hand. Every type path in it must name a type registered for reflection; after a hand edit, load it in a headless test or run the game to confirm it spawns
 
 ### Rendering and Shaders (you are the shader specialist)

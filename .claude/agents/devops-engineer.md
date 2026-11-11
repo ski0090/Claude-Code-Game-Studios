@@ -1,7 +1,7 @@
 ---
 name: devops-engineer
 description: "Build pipelines, CI/CD configuration, version control workflow, branching strategy, automated test pipelines, deployment infrastructure."
-tools: Read, Glob, Grep, Write, Edit, Bash
+tools: Read, Glob, Grep, Write, Edit, Bash, mcp__besfa
 model: sonnet
 maxTurns: 10
 ---

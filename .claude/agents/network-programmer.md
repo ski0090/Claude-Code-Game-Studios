@@ -1,7 +1,7 @@
 ---
 name: network-programmer
 description: "Multiplayer networking — state replication, lag compensation, matchmaking, network protocol, netcode and bandwidth optimization."
-tools: Read, Glob, Grep, Write, Edit, Bash
+tools: Read, Glob, Grep, Write, Edit, Bash, mcp__besfa
 model: inherit
 maxTurns: 20
 ---

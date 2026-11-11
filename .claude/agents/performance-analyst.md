@@ -1,7 +1,7 @@
 ---
 name: performance-analyst
 description: "Performance analyst — profiling, bottlenecks, memory analysis, frame time investigation, recommends optimizations, tracks metrics over time."
-tools: Read, Glob, Grep, Write, Edit, Bash
+tools: Read, Glob, Grep, Write, Edit, Bash, mcp__besfa
 model: inherit
 maxTurns: 20
 memory: project

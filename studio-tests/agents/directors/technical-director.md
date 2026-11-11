@@ -12,7 +12,7 @@
 Verified by reading the agent's `.claude/agents/technical-director.md` frontmatter:
 
 - [ ] `description:` field is present and domain-specific (references architecture, feasibility, ADR — not generic)
-- [ ] `tools:` reads Read, Glob, Grep, Write, Edit, Bash, WebSearch
+- [ ] `tools:` reads Read, Glob, Grep, Write, Edit, Bash, WebSearch, mcp__besfa (the Besfa editor MCP, to start a Besfa game and inspect it)
 - [ ] Model tier is `opus` — frontmatter `model:` reads exactly `opus` (tiers: `.claude/docs/model-tiers.md`)
 - [ ] Agent definition does not claim authority over game design decisions or creative direction
 
